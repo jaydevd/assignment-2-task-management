@@ -14,7 +14,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { City } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
-const { application } = require('express');
 
 const AddCity = async (req, res) => {
     try {

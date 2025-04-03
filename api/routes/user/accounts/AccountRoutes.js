@@ -8,12 +8,12 @@
 
 const express = require('express');
 const isUserAuthenticated = require('./../../../middlewares/isUserAuthenticated');
-const {CreateAccount,
+const { CreateAccount,
     ListAccounts,
     UpdateAccount,
     DeleteAccount,
-            FilterAccounts,
-            SearchAccount } = require('./../../../controllers/user/accounts/AccountController.js');
+    FilterAccounts,
+    SearchAccount } = require('./../../../controllers/user/accounts/AccountController.js');
 
 const router = express.Router();
 
