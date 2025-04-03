@@ -15,14 +15,22 @@ const SubCategory = sequelize.define("SubCategory", {
         type: DataTypes.STRING(60),
         primaryKey: true
     },
-    subCategory: {
+    name: {
         type: DataTypes.STRING(60),
         allowNull: false,
+        unique: true,
         field: 'sub_category'
+    },
+    category: {
+        type: DataTypes.STRING(60),
+        references: {
+            model: 'categories',
+            key: 'id'
+        }
     }
 },
     {
-        tableName: "categories", // Explicitly set the table name
+        tableName: "sub_categories", // Explicitly set the table name
         timestamps: false   // If your table does not have createdAt/updatedAt
     });
 

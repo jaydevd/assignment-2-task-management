@@ -12,7 +12,7 @@ const { GetSubCategories } = require('../../../controllers/user/accounts/UserSub
 
 const router = express.Router();
 
-router.route('/GetCategories')
+router.route('/GetSubCategories')
     .get(GetSubCategories);
 
-module.exports = { SubCategoryRoutes: router };
+module.exports = { UserSubCategoryRoutes: router };

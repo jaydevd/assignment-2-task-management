@@ -18,7 +18,7 @@ const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const GetSubCategories = async (req, res) => {
     try {
         const categories = await SubCategory.findAll({
-            attributes: ['sub_category']
+            attributes: ['id', 'name', 'category']
         });
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
@@ -39,46 +39,47 @@ const GetSubCategories = async (req, res) => {
 
 const AddSubCategory = async (req, res) => {
     try {
-        const { subCategory } = req.body;
+        const { category, subCategory } = req.body;
         const id = uuidv4();
 
-const result = await SubCategory.create(
+        const result = await SubCategory.create(
             {
                 id: id,
-                subCategory: subCategory
+                category: category,
+                name: subCategory
             }
         );
-        
-if (!result) {
-        return res.status(400).json({
-            status: HTTP_STATUS_CODES.CLIENT_ERROR,
+
+        if (!result) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
+        return res.status(200).json({
+            status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
             data: '',
             error: ''
         })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            message: '',
+            data: '',
+            error: error.message
+        })
     }
-        return res.status(200).json({
-        status: HTTP_STATUS_CODES.SUCCESS,
-        message: '',
-        data: '',
-        error: ''
-    })
-} catch (error) {
-    console.log(error);
-    return res.status(500).json({
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        message: '',
-        data: '',
-        error: error.message
-    })
-}
 }
 
 const DeleteSubCategory = async (req, res) => {
     try {
 
         const { id } = req.body;
-        const res = Categories.update({ is_active: false, is_deleted: true }, { where: { id: id } });
+        const res = Categories.update({ isActive: false, isDeleted: true }, { where: { id: id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,

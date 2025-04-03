@@ -18,7 +18,7 @@ const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const GetCategories = async (req, res) => {
     try {
         const categories = await Category.findAll({
-            attributes: ['category']
+            attributes: ['id', 'name']
         });
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
@@ -41,10 +41,11 @@ const AddCategory = async (req, res) => {
     try {
         const { category } = req.body;
         const id = uuidv4();
+
         const result = await Category.create(
             {
                 id: id,
-                category: category
+                name: category
             }
         );
 
@@ -77,7 +78,7 @@ const DeleteCategory = async (req, res) => {
     try {
 
         const { id } = req.body;
-        const res = Category.update({ is_active: false, is_deleted: true }, { where: { id: id } });
+        const res = Category.update({ isActive: false, isDeleted: true }, { where: { id: id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,

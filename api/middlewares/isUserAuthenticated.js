@@ -42,7 +42,7 @@ const isUserAuthenticated = async (req, res, next) => {
 
         const user = await User.findOne({
             where: { token: token, id: payload.id },
-            attributes: ['id', 'name', 'email', 'country', 'city', 'company', 'age', 'gender', 'token', 'is_active']
+            attributes: ['id', 'name', 'email', 'country', 'city', 'company', 'age', 'gender', 'token', 'isActive']
         });
 
         if (!user) {
@@ -54,7 +54,7 @@ const isUserAuthenticated = async (req, res, next) => {
             });
         }
 
-        if (!user.is_active) {
+        if (!user.isActive) {
             return res.status(401).json({
                 status: HTTP_STATUS_CODES.UNAUTHORIZED,
                 message: '',

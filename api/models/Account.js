@@ -23,15 +23,16 @@ const Account = sequelize.define("Account", {
         type: DataTypes.STRING(60),
         allowNull: false,
         references: {
-            model: 'category',
+            model: 'categories',
             key: 'id'
         }
     },
-    sub_category: {
+    subCategory: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        field: 'sub_category',
         references: {
-            model: 'sub_category',
+            model: 'sub_categories',
             key: 'id'
         }
     },

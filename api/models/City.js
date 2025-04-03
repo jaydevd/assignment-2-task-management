@@ -10,14 +10,22 @@ const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database.js");
 const { commonAttributes } = require('./CommonAttributes.js');
 
-const City = sequelize.define("cities", {
+const City = sequelize.define("City", {
     id: {
         type: DataTypes.STRING(60),
         primaryKey: true
     },
-    city: {
+    name: {
         type: DataTypes.STRING(60),
-        allowNull: true,
+        allowNull: false,
+        unique: true
+    },
+    country: {
+        type: DataTypes.STRING(60),
+        references: {
+            model: 'countries',
+            key: 'id'
+        }
     }
 },
     {

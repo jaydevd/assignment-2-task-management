@@ -18,7 +18,7 @@ const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const GetCategories = async (req, res) => {
     try {
         const categories = await Category.findAll({
-            attributes: ['category']
+            attributes: ['id', 'name']
         });
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,

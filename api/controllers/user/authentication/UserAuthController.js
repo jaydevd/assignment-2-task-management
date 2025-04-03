@@ -64,10 +64,10 @@ const UserSignUp = async (req, res) => {
             country: country,
             city: city,
             company: company || null,
-            created_by: id,
-            created_at: Math.floor(Date.now() / 1000),
-            is_active: true,
-            is_deleted: false
+            createdBy: id,
+            createdAt: Math.floor(Date.now() / 1000),
+            isActive: true,
+            isDeleted: false
         });
 
         return res.status(200).json({

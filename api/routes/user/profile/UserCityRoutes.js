@@ -15,4 +15,4 @@ const router = express.Router();
 router.route('/GetCities')
     .get(GetCities);
 
-module.exports = { CityRoutes: router };
+module.exports = { UserCityRoutes: router };

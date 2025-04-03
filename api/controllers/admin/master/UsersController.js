@@ -14,6 +14,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { User } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
+const { Sequelize, Op } = require('sequelize');
 
 const ListUsers = async (req, res) => {
     try {
@@ -156,7 +157,7 @@ const DeleteUser = async (req, res) => {
                 error: ''
             })
         }
-        const result = await User.update({ is_active: false, is_deleted: true }, { where: { id: id } });
+        const result = await User.update({ isActive: false, isDeleted: true }, { where: { id: id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,

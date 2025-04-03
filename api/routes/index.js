@@ -26,22 +26,20 @@ const { UserCityRoutes } = require('./user/profile/UserCityRoutes.js');
 const router = express.Router();
 
 // user routes
-router.route('/user/authentication', UserAuthRoutes);
-router.route('/user/accounts', AccountRoutes);
-router.route('/user/Category', UserCategoryRoutes);
-router.route('/user/SubCategory', UserSubCategoryRoutes);
-router.route('/user/profile', ProfileRoutes);
-router.route('/user/Country', UserCountryRoutes);
-router.route('/user/City', UserCityRoutes);
+router.use('/user/authentication', UserAuthRoutes);
+router.use('/user/accounts', AccountRoutes);
+router.use('/user/Category', UserCategoryRoutes);
+router.use('/user/SubCategory', UserSubCategoryRoutes);
+router.use('/user/profile', ProfileRoutes);
+router.use('/user/Country', UserCountryRoutes);
+router.use('/user/City', UserCityRoutes);
 
 // admin routes
-router.route('/admin/authentication', AdminAuthRoutes);
-router.route('/admin/master/Category', CategoryRoutes);
-router.route('/admin/master/SubCategory', SubCategoryRoutes);
-router.route('/admin/master/Country', CountryRoutes);
-router.route('/admin/master/city', CityRoutes);
-router.route('/admin/master/Users', UsersRoutes);
-
-
+router.use('/admin/authentication', AdminAuthRoutes);
+router.use('/admin/master/Category', CategoryRoutes);
+router.use('/admin/master/SubCategory', SubCategoryRoutes);
+router.use('/admin/master/Country', CountryRoutes);
+router.use('/admin/master/city', CityRoutes);
+router.use('/admin/master/Users', UsersRoutes);
 
 module.exports = router;

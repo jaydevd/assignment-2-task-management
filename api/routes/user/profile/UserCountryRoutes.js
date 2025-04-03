@@ -15,4 +15,4 @@ const router = express.Router();
 router.route('/GetCountries')
     .get(GetCountries);
 
-module.exports = { CountryRoutes: router };
+module.exports = { UserCountryRoutes: router };

@@ -17,12 +17,12 @@ const { HTTP_STATUS_CODES } = require('../../../config/constants');
 
 const GetCities = async (req, res) => {
     try {
-        console.log("country api called!");
+        console.log("city api called!");
 
-        const countries = await City.findAll({ attributes: ['country', 'city'] });
-        console.log(countries);
+        const cities = await City.findAll({ attributes: ['id', 'name', 'country'] });
+        // console.log(cities);
 
-        if (!countries) {
+        if (!cities) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,
                 message: '',
@@ -33,7 +33,7 @@ const GetCities = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
-            data: countries,
+            data: cities,
             error: ''
         })
     } catch (error) {

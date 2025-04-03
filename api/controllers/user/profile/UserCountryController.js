@@ -12,14 +12,13 @@ const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { City } = require('../../../models/index');
+const { Country } = require('../../../models/index');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 
 const GetCountries = async (req, res) => {
     try {
-        console.log("country api called!");
 
-        const countries = await CountriesCities.findAll({ attributes: ['country', 'city'] });
+        const countries = await Country.findAll({ attributes: ['id', 'name'] });
         console.log(countries);
 
         if (!countries) {

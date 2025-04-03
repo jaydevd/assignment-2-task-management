@@ -12,18 +12,18 @@ const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { User } = require('./../../../models/index');
+const { Country } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { application } = require('express');
 
 const AddCountry = async (req, res) => {
     try {
         console.log("Add Country");
-        const { country, city } = req.body;
-        console.log(country, city);
+        const { country } = req.body;
+        console.log(country);
 
         const id = uuidv4();
-        const result = await CountriesCities.create({ id: id, country: country, city: city });
+        const result = await Country.create({ id: id, name: country });
         console.log(result);
 
         if (!result) {
@@ -55,7 +55,7 @@ const AddCountry = async (req, res) => {
 const DeleteCountry = async (req, res) => {
     try {
         const { id } = req.body;
-        const res = CountriesCities.destroy({ where: { id: id } });
+        const res = Country.destroy({ where: { id: id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
@@ -78,7 +78,7 @@ const GetCountries = async (req, res) => {
     try {
         console.log("country api called!");
 
-        const countries = await CountriesCities.findAll({ attributes: ['country', 'city'] });
+        const countries = await Country.findAll({ attributes: ['id', 'name'] });
         console.log(countries);
 
         if (!countries) {

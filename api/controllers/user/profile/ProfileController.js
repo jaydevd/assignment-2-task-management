@@ -55,7 +55,9 @@ const EditProfile = async (req, res) => {
             age: age,
             country: country,
             city: city,
-            company: company
+            company: company,
+            updatedAt: Math.floor(Date.noe() / 1000),
+            updatedBy: id
         }, { where: { id: id } });
 
         return res.status(200).json({

@@ -42,10 +42,11 @@ const isAdminAuthenticated = async (req, res, next) => {
     }
 
     const admin = await Admin.findOne({
-      attributes: ['id', 'name', 'email', 'token', 'is_active'],
+      attributes: ['id', 'name', 'email', 'token', 'isActive'],
       where: { id: payload.id }
     });
 
+    console.log(admin);
 
     if (!admin.id) {
       return res.status(401).json({
@@ -56,9 +57,10 @@ const isAdminAuthenticated = async (req, res, next) => {
       });
     }
 
-    if (!admin.is_active) {
-      return res.status(400).json({
-        status: '400',
+    if (!admin.isActive) {
+      console.log("admin active? ", admin.isActive);
+      return res.status(403).json({
+        status: HTTP_STATUS_CODES.FORBIDDEN,
         message: '',
         error: 'Admin is not active',
         data: ''

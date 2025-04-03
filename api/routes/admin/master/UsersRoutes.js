@@ -8,13 +8,13 @@
 
 const express = require('express');
 const isAdminAuthenticated = require('./../../../middlewares/isAdminAuthenticated.js');
-const { ListUsers, EditUser, DeleteUser } = require('./../../../controllers/admin/master/UsersController.js');
+const { ListUsers, EditUser, DeleteUser, SearchUsers } = require('./../../../controllers/admin/master/UsersController.js');
 
 const router = express.Router();
 
 router.route('/ListUsers')
     .all(isAdminAuthenticated)
-    .post(ListUsers);
+    .get(ListUsers);
 
 router.route('/EditUsers')
     .all(isAdminAuthenticated)
@@ -23,4 +23,7 @@ router.route('/EditUsers')
 router.route('/DeleteUsers')
     .get(DeleteUser);
 
-module.exports = { SubCategoryRoutes: router };
+router.route('/SearchUsers')
+    .get(SearchUsers);
+
+module.exports = { UsersRoutes: router };

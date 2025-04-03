@@ -48,12 +48,12 @@ const CreateAccount = async (req, res) => {
             id: accountID,
             name: name,
             category: category,
-            sub_category: subCategory,
+            subCategory: subCategory,
             description: description,
-            created_by: id,
-            created_at: Math.floor(Date.now() / 1000),
-            is_active: true,
-            is_deleted: false
+            createdBy: id,
+            createdAt: Math.floor(Date.now() / 1000),
+            isActive: true,
+            isDeleted: false
         });
 
         return res.status(200).json({
@@ -80,8 +80,8 @@ const ListAccounts = async (req, res) => {
         const { id } = req.query;
         console.log(id);
         const accounts = await Account.findAll({
-            attributes: ['id', 'name', 'category', 'sub_category', 'is_active', 'created_by'],
-            where: { created_by: id, is_active: true }
+            attributes: ['id', 'name', 'category', 'sub_category', 'isActive', 'createdBy'],
+            where: { createdBy: id, isActive: true }
         }
         );
         console.log("accounts: ", accounts);
@@ -111,9 +111,9 @@ const UpdateAccount = async (req, res) => {
         const result = await Account.update({
             name: name,
             category: category,
-            sub_category: subCategory,
-            updated_at: Math.floor(Date.now() / 1000),
-            updated_by: id
+            subCategory: subCategory,
+            updatedAt: Math.floor(Date.now() / 1000),
+            updatedBy: id
         }, { where: { id: id } });
 
         return res.status(200).json({
@@ -128,7 +128,7 @@ const UpdateAccount = async (req, res) => {
         return res.status(500).json({
             status: INTERNAL_SERVER_ERROR,
             message: "",
-            data: account.id,
+            data: '',
             error: ""
         })
     }
@@ -138,7 +138,7 @@ const DeleteAccount = async (req, res) => {
     try {
 
         const { id } = req.body;
-        const result = await Account.update({ is_active: false, is_deleted: true }, { where: { id: id } });
+        const result = await Account.update({ isActive: false, isDeleted: true }, { where: { id: id } });
 
         return res.status(200).json({
             status: '200',
@@ -162,7 +162,7 @@ const FilterAccounts = async (req, res) => {
 
     try {
         const { category, subCategory } = req.params;
-        const accounts = await Account.findAll({ where: { category: category, sub_category: subCategory || { [Op.like]: `%%` } } });
+        const accounts = await Account.findAll({ where: { category: category, subCategory: subCategory || { [Op.like]: `%%` } } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
@@ -186,7 +186,7 @@ const SearchAccount = async (req, res) => {
         const { query } = req.params;
 
         const accounts = await Account.findAll({
-            attributes: ['name', 'category', 'sub_category'],
+            attributes: ['name', 'category', 'subCategory'],
         }, { where: { name: { [Op.like]: `%${query}%` } } });
 
         return res.status(200).json({

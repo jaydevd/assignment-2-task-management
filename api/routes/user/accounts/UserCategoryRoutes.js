@@ -15,4 +15,4 @@ const router = express.Router();
 router.route('/GetCategories')
     .get(GetCategories);
 
-module.exports = { CategoryRoutes: router };
+module.exports = { UserCategoryRoutes: router };

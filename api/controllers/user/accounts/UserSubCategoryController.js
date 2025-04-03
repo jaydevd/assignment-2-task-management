@@ -17,13 +17,13 @@ const { HTTP_STATUS_CODES } = require('../../../config/constants');
 
 const GetSubCategories = async (req, res) => {
     try {
-        const categories = await SubCategory.findAll({
-            attributes: ['sub_category']
+        const subCategories = await SubCategory.findAll({
+            attributes: ['id', 'name', 'category']
         });
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
-            data: categories,
+            data: subCategories,
             error: ''
         })
     } catch (error) {

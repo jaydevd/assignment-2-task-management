@@ -17,11 +17,11 @@ const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 
 const AddCity = async (req, res) => {
     try {
-        const { city } = req.body;
+        const { country, city } = req.body;
         // console.log( city);
 
         const id = uuidv4();
-        const result = await City.create({ id: id, country: country, city: city });
+        const result = await City.create({ id: id, country: country, name: city });
         console.log(result);
 
         if (!result) {
@@ -53,7 +53,7 @@ const AddCity = async (req, res) => {
 const DeleteCity = async (req, res) => {
     try {
         const { id } = req.body;
-        const res = City.destroy({ where: { id: id } });
+        const res = City.update({ isActive: false, isDeleted: true }, { where: { id: id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
@@ -74,12 +74,12 @@ const DeleteCity = async (req, res) => {
 
 const GetCities = async (req, res) => {
     try {
-        console.log("country api called!");
+        console.log("city api called!");
 
-        const countries = await City.findAll({ attributes: ['country', 'city'] });
-        console.log(countries);
+        const cities = await City.findAll({ attributes: ['id', 'name', 'country'] });
+        console.log(cities);
 
-        if (!countries) {
+        if (!cities) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,
                 message: '',
@@ -90,7 +90,7 @@ const GetCities = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
-            data: countries,
+            data: cities,
             error: ''
         })
     } catch (error) {
