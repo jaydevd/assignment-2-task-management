@@ -7,12 +7,13 @@
  */
 
 const express = require('express');
-const isUserAuthenticated = require('../../../middlewares/isUserAuthenticated.js');
-const { GetCategories } = require('../../../controllers/user/accounts/UserCategoryController.js');
+const isUser = require('../../../middlewares/isUser.js');
+const { GetCategories } = require('../../../controllers/user/DropdownController.js');
 
 const router = express.Router();
 
 router.route('/GetCategories')
+    .all(isUser)
     .get(GetCategories);
 
-module.exports = { UserCategoryRoutes: router };
+module.exports = { CategoryRoutes: router };

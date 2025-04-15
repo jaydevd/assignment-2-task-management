@@ -12,14 +12,56 @@ const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { SubCategory } = require('./../../../models/index');
-const { HTTP_STATUS_CODES } = require('./../../../config/constants');
+const { Category } = require('../../models/Category');
+const { HTTP_STATUS_CODES } = require('../../config/constants');
+const { sequelize } = require('./../../config/database');
 
-const GetSubCategories = async (req, res) => {
+const GetCountries = async (req, res) => {
     try {
-        const categories = await SubCategory.findAll({
-            attributes: ['id', 'name', 'category']
-        });
+        console.log("country api called!");
+        const query = `SELECT id, name FROM countries;`;
+        const [countries, metadata] = await sequelize.query(query);
+
+        if (!countries) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
+        return res.status(200).json({
+            status: HTTP_STATUS_CODES.SUCCESS,
+            message: '',
+            data: countries,
+            error: ''
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            message: '',
+            data: '',
+            error: error.message
+        })
+
+    }
+}
+
+const GetCategories = async (req, res) => {
+    try {
+
+        const query = `SELECT id, name FROM categories;`;
+        const [categories, metadata] = await sequelize.query(query);
+
+        if (!categories) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
@@ -34,72 +76,11 @@ const GetSubCategories = async (req, res) => {
             data: '',
             error: error.message
         })
-    }
-}
 
-const AddSubCategory = async (req, res) => {
-    try {
-        const { category, subCategory } = req.body;
-        const id = uuidv4();
-
-        const result = await SubCategory.create(
-            {
-                id: id,
-                category: category,
-                name: subCategory
-            }
-        );
-
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
-            data: '',
-            error: ''
-        })
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        })
-    }
-}
-
-const DeleteSubCategory = async (req, res) => {
-    try {
-
-        const { id } = req.body;
-        const res = Categories.update({ isActive: false, isDeleted: true }, { where: { id: id } });
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
-            data: '',
-            error: ''
-        })
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        })
     }
 }
 
 module.exports = {
-    GetSubCategories,
-    AddSubCategory,
-    DeleteSubCategory
+    GetCountries,
+    GetCategories
 }

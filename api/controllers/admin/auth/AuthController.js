@@ -1,23 +1,41 @@
 /**
- * @name admin login/logout
- * @file bootstrap.js
+ * @name AuthController
+ * @file AuthController.js
  * @param {Request} req
  * @param {Response} res
  * @throwsF
- * @description AdminSignUp method will create a new user, AdminLogIn method will log in an existing user and AdminLogOut method will log out the logged in user.
+ * @description methods to log in and log out as an admin
  * @author Jaydev Dwivedi (Zignuts)
  */
-const { Admin } = require("./../../../models/index");
+
+const { Admin } = require("../../../models/index");
 const { v4: uuidv4 } = require('uuid');
 const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { HTTP_STATUS_CODES } = require('./../../../config/constants');
+const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { Sequelize, Op } = require('sequelize');
+const { VALIDATION_RULES } = require('../../../models/validations');
 
-const AdminLogIn = async (req, res) => {
+const LogIn = async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        const validationObj = req.body;
+
+        let validation = new Validator(validationObj, {
+            email: VALIDATION_RULES.ADMIN.email,
+            password: VALIDATION_RULES.ADMIN.password
+        });
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                data: '',
+                message: 'Validation failed',
+                error: validation.errors.all()
+            })
+        }
 
         const admin = await Admin.findOne({
             where: { email: email },
@@ -63,6 +81,7 @@ const AdminLogIn = async (req, res) => {
             message: '',
             error: ''
         });
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -74,7 +93,7 @@ const AdminLogIn = async (req, res) => {
     }
 }
 
-const AdminLogOut = async (req, res) => {
+const LogOut = async (req, res) => {
     try {
         const reqAdmin = req.body.admin;
         const token = reqAdmin.token;
@@ -87,6 +106,9 @@ const AdminLogOut = async (req, res) => {
                 error: ''
             })
         }
+
+        const validationObj = { token };
+        const validation = new Validator(validationObj, VALIDATION_RULES.ADMIN.token);
 
         const admin = await Admin.findOne({
             where: { token: token },
@@ -123,6 +145,6 @@ const AdminLogOut = async (req, res) => {
 }
 
 module.exports = {
-    AdminLogIn,
-    AdminLogOut
+    LogIn,
+    LogOut
 }

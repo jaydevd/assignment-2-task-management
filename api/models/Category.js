@@ -19,11 +19,16 @@ const Category = sequelize.define("Category", {
         type: DataTypes.STRING(60),
         allowNull: false,
         unique: true
-    }
+    },
+    subCategories: {
+        type: DataTypes.JSONB,
+        field: 'sub_categories'
+    },
+    ...commonAttributes
 },
     {
-        tableName: "categories", // Explicitly set the table name
-        timestamps: false   // If your table does not have createdAt/updatedAt
+        tableName: "categories",
+        timestamps: false
     });
 
 module.exports = { Category };

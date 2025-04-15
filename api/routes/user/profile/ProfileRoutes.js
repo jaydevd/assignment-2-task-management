@@ -7,12 +7,12 @@
  */
 
 const express = require('express');
-const { EditProfile } = require('./../../../controllers/user/profile/ProfileController');
-const isUserAuthenticated = require('./../../../middlewares/isUserAuthenticated');
+const { UpdateProfile } = require('./../../../controllers/user/profile/ProfileController');
+const isUser = require('./../../../middlewares/isUser');
 const router = express.Router();
 
-router.route('/EditProfile')
-    .all(isUserAuthenticated)
-    .post(EditProfile);
+router.route('/update')
+    .all(isUser)
+    .post(UpdateProfile);
 
 module.exports = { ProfileRoutes: router }; 

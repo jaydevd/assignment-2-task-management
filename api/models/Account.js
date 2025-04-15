@@ -32,7 +32,7 @@ const Account = sequelize.define("Account", {
         allowNull: false,
         field: 'sub_category',
         references: {
-            model: 'sub_categories',
+            model: 'categories',
             key: 'id'
         }
     },

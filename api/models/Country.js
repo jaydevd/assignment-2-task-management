@@ -19,7 +19,11 @@ const Country = sequelize.define("Country", {
         type: DataTypes.STRING(60),
         allowNull: false,
         unique: true
-    }
+    },
+    cities: {
+        type: DataTypes.JSONB
+    },
+    ...commonAttributes
 },
     {
         tableName: "countries",

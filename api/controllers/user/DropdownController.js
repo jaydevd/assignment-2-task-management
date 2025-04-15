@@ -12,19 +12,17 @@ const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { City } = require('./../../../models/index');
-const { HTTP_STATUS_CODES } = require('./../../../config/constants');
+const { Country } = require('./../../models/index');
+const { HTTP_STATUS_CODES } = require('./../../config/constants');
+const { sequelize } = require('./../../config/database');
 
-const AddCity = async (req, res) => {
+const GetCountries = async (req, res) => {
     try {
-        const { country, city } = req.body;
-        // console.log( city);
+        console.log("country api called!");
+        const query = `SELECT id, name FROM countries;`;
+        const [countries, metadata] = await sequelize.query(query);
 
-        const id = uuidv4();
-        const result = await City.create({ id: id, country: country, name: city });
-        console.log(result);
-
-        if (!result) {
+        if (!countries) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,
                 message: '',
@@ -35,30 +33,7 @@ const AddCity = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
-            data: result.id,
-            error: ''
-        })
-
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        })
-    }
-}
-
-const DeleteCity = async (req, res) => {
-    try {
-        const { id } = req.body;
-        const res = City.update({ isActive: false, isDeleted: true }, { where: { id: id } });
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
-            data: '',
+            data: countries,
             error: ''
         })
     } catch (error) {
@@ -69,17 +44,17 @@ const DeleteCity = async (req, res) => {
             data: '',
             error: error.message
         })
+
     }
 }
 
-const GetCities = async (req, res) => {
+const GetCategories = async (req, res) => {
     try {
-        console.log("city api called!");
 
-        const cities = await City.findAll({ attributes: ['id', 'name', 'country'] });
-        console.log(cities);
+        const query = `SELECT id, name FROM categories;`;
+        const [categories, metadata] = await sequelize.query(query);
 
-        if (!cities) {
+        if (!categories) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,
                 message: '',
@@ -90,7 +65,7 @@ const GetCities = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
-            data: cities,
+            data: categories,
             error: ''
         })
     } catch (error) {
@@ -105,8 +80,4 @@ const GetCities = async (req, res) => {
     }
 }
 
-module.exports = {
-    AddCity,
-    DeleteCity,
-    GetCities
-}
+module.exports = { GetCountries, GetCategories }

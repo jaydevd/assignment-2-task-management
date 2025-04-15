@@ -7,20 +7,17 @@
  */
 
 const express = require('express');
-const { AddCategory, DeleteCategory, GetCategories } = require('./../../../controllers/admin/master/CategoryController.js');
-const isAdminAuthenticated = require('./../../../middlewares/isAdminAuthenticated.js');
+const { AddCategory, DeleteCategory } = require('./../../../controllers/admin/master/CategoryController.js');
+const isAdmin = require('../../../middlewares/isAdmin.js');
 
 const router = express.Router();
 
-router.route('/AddCategory')
-    .all(isAdminAuthenticated)
+router.route('/add')
+    .all(isAdmin)
     .post(AddCategory);
 
-router.route('/DeleteCategory')
-    .all(isAdminAuthenticated)
+router.route('/delete')
+    .all(isAdmin)
     .post(DeleteCategory);
-
-router.route('/GetCategories')
-    .get(GetCategories);
 
 module.exports = { CategoryRoutes: router }; 

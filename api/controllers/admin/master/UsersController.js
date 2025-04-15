@@ -14,17 +14,31 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { User } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
+const { sequelize } = require('./../../../config/database');
 const { Sequelize, Op } = require('sequelize');
 
 const ListUsers = async (req, res) => {
     try {
-        const { page } = req.query;
-        const limit = 20;
-        const skip = (page - 1) * limit;
+        const { country, city, query, page } = req.query;
+        const limit = 2;
+        const skip = Number(page - 1) * limit;
+        console.log("skip: ", skip);
 
-        const users = await User.findAll({
-            attributes: ['id', 'name', 'email', 'country', 'city', 'gender', 'age', 'company']
-        }, { offset: skip, limit: limit });
+        console.log("ListUsers API");
+
+        const rawQuery = `
+        SELECT u.id, u.name, u.email, c.name AS country, city_obj->>'name' AS city, u.gender, u.age, u.company
+        FROM users u
+        JOIN countries c ON u.country = c.id
+        JOIN LATERAL jsonb_array_elements(c.cities) AS city(city_obj)
+        ON city_obj->>'id' = u.city
+        WHERE (u.name ILIKE '%${query || ''}%' OR u.email ILIKE '%${query || ''}%') AND c.name ILIKE '%${country || ''}%' AND city_obj->>'name' ILIKE '%${city || ''}%'
+        LIMIT ${limit || ''} OFFSET ${skip || 0}
+        `;
+
+        const [users, metadata] = await sequelize.query(rawQuery);
+
+        console.log("users: ", users);
 
         if (!users) {
             return res.status(400).json({
@@ -44,37 +58,6 @@ const ListUsers = async (req, res) => {
 
     } catch (error) {
         console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message()
-        })
-    }
-}
-
-const SearchUsers = async (req, res) => {
-    try {
-        let query = req.query["query"];
-        console.log(query);
-        query = query.toLowerCase();
-
-        const users = await User.findAll({
-            where: {
-                [Op.or]: [{ name: { [Op.iLike]: `%${query}%` } }, { email: { [Op.iLike]: `%${query}%` } }]
-            },
-            attributes: ['id', 'name', 'email', 'age', 'gender', 'country', 'city', 'company']
-        });
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
-            data: users,
-            error: ''
-        })
-    } catch (error) {
-        console.log(error);
-
         return res.status(500).json({
             status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
             message: '',
@@ -179,6 +162,5 @@ const DeleteUser = async (req, res) => {
 module.exports = {
     ListUsers,
     EditUser,
-    DeleteUser,
-    SearchUsers
+    DeleteUser
 }

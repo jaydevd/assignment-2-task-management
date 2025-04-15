@@ -19,12 +19,15 @@ const { application } = require('express');
 const AddCountry = async (req, res) => {
     try {
         console.log("Add Country");
-        const { country } = req.body;
+        const { country, cities } = req.body;
         console.log(country);
 
         const id = uuidv4();
-        const result = await Country.create({ id: id, name: country });
-        console.log(result);
+        const query = `
+        INSERT INTO countries (id, name, sub_categories, isActive, isDeleted, createdAt, createdBy) VALUES
+        ('${id}', '${country}','${cities || null}', true, false, ${Math.floor(Date.now() / 1000)}, '${id}');`;
+
+        const [result, metadata] = await sequelize.query(query);
 
         if (!result) {
             return res.status(400).json({
@@ -55,7 +58,16 @@ const AddCountry = async (req, res) => {
 const DeleteCountry = async (req, res) => {
     try {
         const { id } = req.body;
-        const res = Country.destroy({ where: { id: id } });
+        const res = Country.update({ isActive: false, isDeleted: true }, { where: { id: id } });
+
+        if (!res) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
@@ -74,27 +86,34 @@ const DeleteCountry = async (req, res) => {
     }
 }
 
-const GetCountries = async (req, res) => {
+const ListCountries = async (req, res) => {
     try {
         console.log("country api called!");
 
-        const countries = await Country.findAll({ attributes: ['id', 'name'] });
-        console.log(countries);
+        // Pagination
+        const { query, countryID, page } = req.query;
+        const limit = 20;
+        const skip = (page - 1) * limit;
+
+        // List countries with filter
+        const [countries, metadata] = await sequelize.query(`SELECT id, name, cities FROM countries WHERE name ILIKE '%${query || ''}%' AND id ILIKE '%${countryID || ''}%' LIMIT ${limit || 10} OFFSET ${skip || 0}`);
 
         if (!countries) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,
-                message: '',
+                message: 'No countries found',
                 data: '',
                 error: ''
             })
         }
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
             data: countries,
             error: ''
         })
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -110,5 +129,5 @@ const GetCountries = async (req, res) => {
 module.exports = {
     AddCountry,
     DeleteCountry,
-    GetCountries
+    ListCountries
 }

@@ -13,49 +13,44 @@ const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
-const { Sequelize, Op } = require('sequelize');
+const { Sequelize, Op, where } = require('sequelize');
+const { VALIDATION_RULES } = require('./../../../models/validations');
 
-const EditProfile = async (req, res) => {
+const UpdateProfile = async (req, res) => {
 
     try {
         const { id, name, gender, age, country, city, company } = req.body;
 
-        let validation = new Validator({
-            id: id,
-            name: name,
-            age: age,
-            gender: gender,
-            country: country,
-            city: city,
-            company: company
-        },
-            {
-                id: 'required',
-                name: 'required',
-                gender: 'required',
-                age: 'required',
-                country: 'required',
-                city: 'required',
-                company: 'mxa:64'
-            }
-        )
+        const validationObj = req.body;
+        let validation = new Validator(validationObj, VALIDATION_RULES.USER);
 
         if (validation.fails()) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,
                 data: '',
-                message: 'Invalid Credentials',
+                message: 'validation failed',
                 error: validation.errors.all()
             })
         }
 
+        const verifyID = await User.findOne({ attributes: ['id'], where: { id: id } });
+
+        if (!verifyID) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: 'id not found',
+                data: '',
+                error: ''
+            })
+        }
+
         const result = await User.update({
-            name: name,
-            gender: gender,
-            age: age,
-            country: country,
-            city: city,
-            company: company,
+            name,
+            gender,
+            age,
+            country,
+            city,
+            company,
             updatedAt: Math.floor(Date.noe() / 1000),
             updatedBy: id
         }, { where: { id: id } });
@@ -66,6 +61,7 @@ const EditProfile = async (req, res) => {
             message: 'Data Created Successfully',
             error: ''
         })
+
     } catch (error) {
         console.log(error);
 
@@ -78,4 +74,4 @@ const EditProfile = async (req, res) => {
     }
 }
 
-module.exports = { EditProfile }
+module.exports = { UpdateProfile }

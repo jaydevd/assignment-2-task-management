@@ -7,23 +7,21 @@
  */
 
 const express = require('express');
-const isAdminAuthenticated = require('./../../../middlewares/isAdminAuthenticated.js');
-const { ListUsers, EditUser, DeleteUser, SearchUsers } = require('./../../../controllers/admin/master/UsersController.js');
+const isAdmin = require('../../../middlewares/isAdmin.js');
+const { ListUsers, EditUser, DeleteUser } = require('./../../../controllers/admin/master/UsersController.js');
 
 const router = express.Router();
 
-router.route('/ListUsers')
-    .all(isAdminAuthenticated)
+router.route('/list-users')
+    .all(isAdmin)
     .get(ListUsers);
 
-router.route('/EditUsers')
-    .all(isAdminAuthenticated)
+router.route('/update-user')
+    .all(isAdmin)
     .post(EditUser);
 
-router.route('/DeleteUsers')
+router.route('/delete-user')
+    .all(isAdmin)
     .get(DeleteUser);
-
-router.route('/SearchUsers')
-    .get(SearchUsers);
 
 module.exports = { UsersRoutes: router };

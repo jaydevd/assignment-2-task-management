@@ -7,20 +7,21 @@
  */
 
 const express = require('express');
-const isAdminAuthenticated = require('./../../../middlewares/isAdminAuthenticated.js');
-const { AddCountry, DeleteCountry, GetCountries } = require('./../../../controllers/admin/master/CountryController.js');
+const isAdmin = require('../../../middlewares/isAdmin.js');
+const { AddCountry, DeleteCountry, ListCountries } = require('./../../../controllers/admin/master/CountryController.js');
 
 const router = express.Router();
 
-router.route('/AddCountry')
-    .all(isAdminAuthenticated)
+router.route('/add')
+    .all(isAdmin)
     .post(AddCountry);
 
-router.route('/DeleteCountry')
-    .all(isAdminAuthenticated)
+router.route('/delete')
+    .all(isAdmin)
     .post(DeleteCountry);
 
-router.route('/GetCountries')
-    .get(GetCountries);
+router.route('/get-countries')
+    .all(isAdmin)
+    .get(ListCountries);
 
 module.exports = { CountryRoutes: router }; 

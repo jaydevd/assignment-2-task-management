@@ -14,25 +14,14 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { Account } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
+const { VALIDATION_RULES } = require('../../../models/validations');
 
 const CreateAccount = async (req, res) => {
     try {
         const { id, name, category, subCategory, description } = req.body;
-        let validation = new Validator({
-            id: id,
-            name: name,
-            category: category,
-            subCategory: subCategory,
-            description: description
-        },
-            {
-                name: 'required',
-                category: 'required',
-                subCategory: 'required',
-                description: 'max:500'
-            }
-        )
 
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, VALIDATION_RULES.ACCOUNT);
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -77,14 +66,35 @@ const CreateAccount = async (req, res) => {
 const ListAccounts = async (req, res) => {
     try {
         console.log("List Accounts api");
-        const { id } = req.query;
-        console.log(id);
-        const accounts = await Account.findAll({
-            attributes: ['id', 'name', 'category', 'sub_category', 'isActive', 'createdBy'],
-            where: { createdBy: id, isActive: true }
+
+        // List accounts with filter
+        const { category, subCategory, query, page } = req.query;
+        const limit = 2;
+        const skip = Number(page - 1) * limit;
+        console.log("skip: ", skip);
+
+        console.log("ListUsers API");
+
+        const rawQuery = `
+        SELECT a.id, a.name, a.name AS category, sub_cat_obj->>'name' AS sub_category, a.description
+        FROM accounts a
+        JOIN categories c ON a.category = c.id
+        JOIN LATERAL jsonb_array_elements(c.sub_categories) AS city(city_obj)
+        ON city_obj->>'id' = a.sub_category
+        WHERE a.name ILIKE '%${query || ''}%' AND c.name ILIKE '%${category || ''}%' AND sub_cat_obj->>'name' ILIKE '%${subCategory || ''}%'
+        LIMIT ${limit || 10} OFFSET ${skip || 0}
+        `;
+
+        const [accounts, metadata] = await sequelize.query(rawQuery);
+
+        if (!accounts) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: 'No accounts found',
+                data: '',
+                error: ''
+            })
         }
-        );
-        console.log("accounts: ", accounts);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
@@ -108,6 +118,10 @@ const UpdateAccount = async (req, res) => {
     try {
 
         const { id, name, category, subCategory } = req.body;
+
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, VALIDATION_RULES.ACCOUNT);
+
         const result = await Account.update({
             name: name,
             category: category,
@@ -158,59 +172,9 @@ const DeleteAccount = async (req, res) => {
     }
 }
 
-const FilterAccounts = async (req, res) => {
-
-    try {
-        const { category, subCategory } = req.params;
-        const accounts = await Account.findAll({ where: { category: category, subCategory: subCategory || { [Op.like]: `%%` } } });
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: "",
-            data: accounts,
-            error: ""
-        });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message()
-        })
-    }
-}
-
-const SearchAccount = async (req, res) => {
-    try {
-        const { query } = req.params;
-
-        const accounts = await Account.findAll({
-            attributes: ['name', 'category', 'subCategory'],
-        }, { where: { name: { [Op.like]: `%${query}%` } } });
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
-            data: accounts,
-            error: ''
-        })
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message()
-        })
-    }
-}
-
 module.exports = {
     CreateAccount,
     ListAccounts,
     UpdateAccount,
-    DeleteAccount,
-    FilterAccounts,
-    SearchAccount
+    DeleteAccount
 };

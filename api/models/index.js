@@ -10,9 +10,7 @@
 const { User } = require('./User.js');
 const { Admin } = require('./Admin.js');
 const { Account } = require("./Account.js");
-const { City } = require("./City.js");
 const { Category } = require("./Category.js");
-const { SubCategory } = require("./SubCategory.js");
 const { Country } = require("./Country.js");
 
 module.exports = {
@@ -20,7 +18,5 @@ module.exports = {
     Admin,
     Account,
     Country,
-    Category,
-    City,
-    SubCategory
+    Category
 };

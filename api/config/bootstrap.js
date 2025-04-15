@@ -1,5 +1,5 @@
 /**
- * @name signup/login/logout
+ * @name create admin
  * @file bootstrap.js
  * @param {Request} req
  * @param {Response} res
@@ -18,7 +18,7 @@ const { Sequelize, Op } = require('sequelize');
 module.exports.bootstrap = async () => {
     try {
 
-        const result = Admin.findAll({ attributes: ['id', 'name', 'email', 'password'] });
+        const result = Admin.findAll({ attributes: ['id', 'name', 'email', 'password'] }, { limit: 1 });
         if (!result) {
             const name = "Admin";
             const password = "1234";
@@ -37,6 +37,6 @@ module.exports.bootstrap = async () => {
             });
         }
     } catch (error) {
-        console.log(error);
+        throw new Error(error);
     }
 };

@@ -18,14 +18,22 @@ sequelize.sync().then(() => {
 });
 
 app.use(cors({
-    origin: "http://localhost:5173", // Allow requests only from React app
+    origin: "http://localhost:5173",
     methods: "GET,POST,PUT,DELETE",
     credentials: true
 }));
 
 app.use('/', router);
 
-bootstrap();
+const Bootstrap = async () => {
+    try {
+        await bootstrap();
+    } catch (error) {
+        throw new Error(error);
+    }
+}
+
+Bootstrap();
 
 const PORT = process.env.PORT || 5000;
 

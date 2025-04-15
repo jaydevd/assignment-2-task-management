@@ -1,52 +1,35 @@
 /**
- * @name signup/login/logout
- * @file bootstrap.js
+ * @name AuthController
+ * @file AuthController.js
  * @param {Request} req
  * @param {Response} res
  * @throwsF
- * @description AdminSignUp method will create a new user, AdminLogIn method will log in an existing user and AdminLogOut method will log out the logged in user.
+ * @description methods to sign up, log in and log out as a user.
  * @author Jaydev Dwivedi (Zignuts)
  */
-const { User } = require('./../../../models/index');
+
+const { User } = require('../../../models/index');
 const { v4: uuidv4 } = require('uuid');
 const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { HTTP_STATUS_CODES } = require('./../../../config/constants');
+const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { Sequelize, Op } = require('sequelize');
+const { VALIDATION_RULES } = require('../../../models/validations');
 
-const UserSignUp = async (req, res) => {
+const SignUp = async (req, res) => {
 
     try {
         const { name, email, password, age, gender, country, city, company } = req.body;
 
-        let validation = new Validator({
-            name: name,
-            email: email,
-            password: password,
-            age: age,
-            gender: gender,
-            country: country,
-            city: city,
-            company: company
-        },
-            {
-                name: ["required", "max:30"],
-                email: ["required", "email"],
-                password: "required",
-                age: "required",
-                gender: "required",
-                country: "required",
-                city: "required",
-                company: "max:64"
-            }
-        )
+        const validationObj = req.body;
+        let validation = new Validator(validationObj, VALIDATION_RULES.USER);
 
         if (validation.fails()) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,
                 data: '',
-                message: 'Invalid Credentials',
+                message: 'Validation failed',
                 error: validation.errors.all()
             })
         }
@@ -55,14 +38,14 @@ const UserSignUp = async (req, res) => {
         const id = uuidv4();
 
         const result = await User.create({
-            id: id,
-            name: name,
-            email: email,
+            id,
+            name,
+            email,
             password: hashedPassword,
-            age: age,
-            gender: gender,
-            country: country,
-            city: city,
+            age,
+            gender,
+            country,
+            city,
             company: company || null,
             createdBy: id,
             createdAt: Math.floor(Date.now() / 1000),
@@ -89,9 +72,21 @@ const UserSignUp = async (req, res) => {
     }
 }
 
-const UserLogIn = async (req, res) => {
+const LogIn = async (req, res) => {
     try {
         const { email, password } = req.body;
+        const validationObj = req.body;
+
+        const validation = new Validator(validationObj, VALIDATION_RULES.USER.email, VALIDATION_RULES.USER.password);
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                data: '',
+                message: 'Validation failed',
+                error: validation.errors.all()
+            })
+        }
 
         const user = await User.findOne({
             where: { email: email },
@@ -107,11 +102,8 @@ const UserLogIn = async (req, res) => {
             });
 
         }
-        // console.log("User: ", user.password);
 
         const isMatch = await bcrypt.compare(password, user.password);
-
-        // console.log('Comparison completed: ', isMatch);
 
         if (!isMatch) {
             return res.status(400).json({
@@ -122,12 +114,9 @@ const UserLogIn = async (req, res) => {
             })
         }
 
-        // console.log("Password matched");
         const secretKey = process.env.SECRET_KEY;
 
         const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: '1h' });
-
-        // console.log("token:", token);
 
         const result = await User.update(
             { token: token },
@@ -137,8 +126,6 @@ const UserLogIn = async (req, res) => {
                 },
             },
         );
-        console.log("token updation result (userLogIn): ", result);
-        console.log("user updated token (userLogIn): ", user.token);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
@@ -146,6 +133,7 @@ const UserLogIn = async (req, res) => {
             message: '',
             error: ''
         });
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -157,9 +145,21 @@ const UserLogIn = async (req, res) => {
     }
 }
 
-const UserLogOut = async (req, res) => {
+const LogOut = async (req, res) => {
     try {
         const { token } = req.body;
+
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, VALIDATION_RULES.USER.token);
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                data: '',
+                message: 'Validation failed',
+                error: validation.errors.all()
+            })
+        }
 
         const user = await User.findOne({
             where: { token: token },
@@ -197,7 +197,7 @@ const UserLogOut = async (req, res) => {
 }
 
 module.exports = {
-    UserSignUp,
-    UserLogIn,
-    UserLogOut
+    SignUp,
+    LogIn,
+    LogOut
 }
