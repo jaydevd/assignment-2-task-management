@@ -19,7 +19,6 @@ const { VALIDATION_RULES } = require('../../models/validations');
 
 const GetCountries = async (req, res) => {
     try {
-        console.log("country api called!");
         const query = `SELECT id, name FROM countries;`;
         const [countries, metadata] = await sequelize.query(query);
 
@@ -86,7 +85,7 @@ const GetCities = async (req, res) => {
 
         const { country } = req.body;
         const validatorObj = req.body;
-        const validation = new Validator(validatorObj, VALIDATION_RULES.COUNTRY.id);
+        const validation = new Validator(validatorObj, { country: VALIDATION_RULES.COUNTRY.id });
 
         const query = `SELECT cities FROM countries WHERE country = ${country};`;
         const [cities, metadata] = await sequelize.query(query);
@@ -123,7 +122,7 @@ const GetSubCategories = async (req, res) => {
         const { category } = req.body;
         const validatorObj = req.body;
 
-        const validation = new Validator(validatorObj, VALIDATION_RULES.CATEGORY.id);
+        const validation = new Validator(validatorObj, { category: VALIDATION_RULES.CATEGORY.id });
         if (validation.fails()) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,

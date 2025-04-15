@@ -16,15 +16,13 @@ const { User } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 const { Sequelize, Op } = require('sequelize');
+const { VALIDATION_RULES } = require('../../../models/validations');
 
 const ListUsers = async (req, res) => {
     try {
         const { country, city, query, page } = req.query;
         const limit = 2;
         const skip = Number(page - 1) * limit;
-        console.log("skip: ", skip);
-
-        console.log("ListUsers API");
 
         const rawQuery = `
         SELECT u.id, u.name, u.email, c.name AS country, city_obj->>'name' AS city, u.gender, u.age, u.company
@@ -37,8 +35,6 @@ const ListUsers = async (req, res) => {
         `;
 
         const [users, metadata] = await sequelize.query(rawQuery);
-
-        console.log("users: ", users);
 
         if (!users) {
             return res.status(400).json({
@@ -71,27 +67,8 @@ const EditUser = async (req, res) => {
     try {
         const { id, name, country, city, gender, age, company } = req.body;
 
-        let validation = new Validator({
-            id: id,
-            name: name,
-            gender: gender,
-            country: country,
-            city: city,
-            gender: gender,
-            age: age,
-            company: company
-        },
-            {
-                id: 'required',
-                name: 'required',
-                gender: 'required',
-                country: 'required',
-                city: 'required',
-                gender: 'required',
-                age: 'required',
-                company: 'max:64'
-            }
-        )
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, VALIDATION_RULES.USER);
 
         if (validation.fails()) {
             return res.status(400).json({

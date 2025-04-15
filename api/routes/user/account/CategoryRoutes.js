@@ -7,7 +7,7 @@
  */
 
 const express = require('express');
-const isUser = require('../../../middlewares/isUser.js');
+const { isUser } = require('../../../middlewares/isUser.js');
 const { GetCategories } = require('../../../controllers/user/DropdownController.js');
 
 const router = express.Router();

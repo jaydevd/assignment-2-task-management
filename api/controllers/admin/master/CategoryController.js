@@ -22,7 +22,7 @@ const AddCategory = async (req, res) => {
         const id = uuidv4();
 
         const query = `
-        INSERT INTO categories (id, name, sub_categories, isActive, isDeleted, createdAt, createdBy) VALUES
+        INSERT INTO categories (id, name, sub_categories, is_active, is_deleted, created_at, created_by) VALUES
         ('${id}', '${category}','${sub_categories || null}', true, false, ${Math.floor(Date.now() / 1000)}, '${id}');`;
 
         const [result, metadata] = await sequelize.query(query);

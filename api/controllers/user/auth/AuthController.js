@@ -75,13 +75,9 @@ const SignUp = async (req, res) => {
 const LogIn = async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log('email, password: ', email, password);
-        console.log('req.body: ', req.body);
 
         const validationObj = req.body;
         const validation = new Validator(validationObj, { email: VALIDATION_RULES.USER.email, password: VALIDATION_RULES.USER.password });
-
-        console.log('VALIDATION_RULES.USER.email, VALIDATION_RULES.USER.password: ', VALIDATION_RULES.USER.email, VALIDATION_RULES.USER.password);
 
         if (validation.fails()) {
             return res.status(400).json({

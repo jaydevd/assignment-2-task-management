@@ -7,7 +7,7 @@
  */
 
 const express = require('express');
-const isUser = require('./../../../middlewares/isUser');
+const { isUser } = require('./../../../middlewares/isUser');
 const { CreateAccount,
     ListAccounts,
     UpdateAccount,
@@ -19,7 +19,7 @@ router.route('/list')
     .all(isUser)
     .get(ListAccounts);
 
-router.route('/create')
+router.route('/add')
     .all(isUser)
     .post(CreateAccount);
 

@@ -15,6 +15,7 @@ const jwt = require('jsonwebtoken');
 const { Country } = require('./../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../config/constants');
 const { sequelize } = require('./../../config/database');
+const { VALIDATION_RULES } = require('../../models/validations');
 
 const GetCountries = async (req, res) => {
     try {
@@ -87,8 +88,9 @@ const GetCities = async (req, res) => {
         const validatorObj = req.body;
         const validation = new Validator(validatorObj, VALIDATION_RULES.COUNTRY.id);
 
-        const query = `SELECT cities FROM countries WHERE country = ${country};`;
+        const query = `SELECT cities FROM countries WHERE name = '${country}';`;
         const [cities, metadata] = await sequelize.query(query);
+        console.log(cities);
 
         if (!cities) {
             return res.status(400).json({
@@ -102,7 +104,7 @@ const GetCities = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
-            data: '',
+            data: cities,
             error: ''
         })
     } catch (error) {
@@ -122,7 +124,7 @@ const GetSubCategories = async (req, res) => {
         const { category } = req.body;
         const validatorObj = req.body;
 
-        const validation = new Validator(validatorObj, VALIDATION_RULES.CATEGORY.id);
+        const validation = new Validator(validatorObj, { category: VALIDATION_RULES.CATEGORY.name });
         if (validation.fails()) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,
@@ -132,7 +134,7 @@ const GetSubCategories = async (req, res) => {
             })
         }
 
-        const query = `SELECT cities FROM categories WHERE category = ${category};`;
+        const query = `SELECT sub_categories FROM categories WHERE name = '${category}';`;
         const [subCategories, metadata] = await sequelize.query(query);
 
         if (!subCategories) {
@@ -147,7 +149,7 @@ const GetSubCategories = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
-            data: '',
+            data: subCategories,
             error: ''
         })
     } catch (error) {

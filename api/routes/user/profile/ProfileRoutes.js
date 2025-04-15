@@ -8,7 +8,7 @@
 
 const express = require('express');
 const { UpdateProfile } = require('./../../../controllers/user/profile/ProfileController');
-const isUser = require('./../../../middlewares/isUser');
+const { isUser } = require('./../../../middlewares/isUser');
 const router = express.Router();
 
 router.route('/update')

@@ -13,7 +13,7 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models/index.js');
 const { HTTP_STATUS_CODES } = require('../config/constants.js');
 
-const isUserAuthenticated = async (req, res, next) => {
+const isUser = async (req, res, next) => {
 
     try {
         const authHeader = req.headers['authorization'];
@@ -89,4 +89,4 @@ const isUserAuthenticated = async (req, res, next) => {
     }
 }
 
-module.exports = isUserAuthenticated;
+module.exports = { isUser };

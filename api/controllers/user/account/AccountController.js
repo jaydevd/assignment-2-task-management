@@ -19,10 +19,17 @@ const { sequelize } = require('../../../config/database');
 
 const CreateAccount = async (req, res) => {
     try {
-        const { id, name, category, subCategory, description } = req.body;
+        const { name, category, subCategory } = req.body;
+
+        const reqUser = req.user;
+        const userID = reqUser.id;
 
         const validationObj = req.body;
-        const validation = new Validator(validationObj, VALIDATION_RULES.ACCOUNT);
+        const validation = new Validator(validationObj, {
+            name: VALIDATION_RULES.ACCOUNT.name,
+            category: VALIDATION_RULES.ACCOUNT.category,
+            subCategory: VALIDATION_RULES.ACCOUNT.subCategory
+        });
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -33,14 +40,14 @@ const CreateAccount = async (req, res) => {
             })
         }
 
-        const accountID = uuidv4();
+        const id = uuidv4();
+
         const account = await Account.create({
-            id: accountID,
+            id: id,
             name: name,
             category: category,
             subCategory: subCategory,
-            description: description,
-            createdBy: id,
+            createdBy: userID,
             createdAt: Math.floor(Date.now() / 1000),
             isActive: true,
             isDeleted: false
@@ -70,9 +77,8 @@ const ListAccounts = async (req, res) => {
 
         // List accounts with filter
         const { category, subCategory, query, page } = req.query;
-        const reqUser = req.user;
-        console.log(reqUser);
 
+        const reqUser = req.user;
         const userID = reqUser.id;
 
         const limit = 5;
