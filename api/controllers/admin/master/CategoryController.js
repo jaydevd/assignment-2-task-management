@@ -114,8 +114,50 @@ const ListCategories = async (req, res) => {
     }
 }
 
+const AddSubCategory = async (req, res) => {
+    try {
+        const { category, subCategory } = req.body;
+        const id = uuidv4();
+
+        const query = `
+        UPDATE categories
+        SET sub_categories = sub_categories || '[{"id": ${id}, "name": "${subCategory}"}]'::jsonb
+        WHERE id = '${category}';`
+
+        const [result, metadata] = sequelize.query(query);
+
+        if (!result) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
+
+        return res.status(200).json({
+            status: HTTP_STATUS_CODES.SUCCESS,
+            message: '',
+            data: '',
+            error: ''
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            message: '',
+            data: '',
+            error: error.message
+        })
+    }
+}
+
+
+
 module.exports = {
     ListCategories,
     AddCategory,
-    DeleteCategory
+    DeleteCategory,
+    AddSubCategory,
+    AddSubCategory
 }

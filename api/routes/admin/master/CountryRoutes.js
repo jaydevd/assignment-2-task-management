@@ -8,7 +8,7 @@
 
 const express = require('express');
 const isAdmin = require('../../../middlewares/isAdmin.js');
-const { AddCountry, DeleteCountry, ListCountries } = require('./../../../controllers/admin/master/CountryController.js');
+const { AddCountry, DeleteCountry, ListCountries, AddCity } = require('./../../../controllers/admin/master/CountryController.js');
 
 const router = express.Router();
 
@@ -16,11 +16,15 @@ router.route('/add')
     .all(isAdmin)
     .post(AddCountry);
 
+router.route('/add-city')
+    .all(isAdmin)
+    .post(AddCity);
+
 router.route('/delete')
     .all(isAdmin)
     .post(DeleteCountry);
 
-router.route('/get-countries')
+router.route('/list-countries')
     .all(isAdmin)
     .get(ListCountries);
 

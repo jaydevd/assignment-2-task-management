@@ -9,7 +9,7 @@
 const express = require('express');
 
 const { AuthRoutes } = require('./auth/AuthRoutes.js');
-const { GetCountries, GetCategories } = require('./../../controllers/admin/DropDownController.js');
+const { GetCountries, GetCategories, GetCities, GetSubCategories } = require('./../../controllers/admin/DropDownController.js');
 const { MasterRoutes } = require('./master/index.js');
 
 const router = express.Router();
@@ -22,5 +22,11 @@ router.route('/drop-down/countries')
 
 router.route('/drop-down/categories')
     .get(GetCategories);
+
+router.route('/drop-down/sub-categories')
+    .get(GetSubCategories);
+
+router.route('/drop-down/cities')
+    .get(GetCities);
 
 module.exports = { AdminRoutes: router };

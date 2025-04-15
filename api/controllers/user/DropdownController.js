@@ -80,4 +80,85 @@ const GetCategories = async (req, res) => {
     }
 }
 
-module.exports = { GetCountries, GetCategories }
+const GetCities = async (req, res) => {
+    try {
+
+        const { country } = req.body;
+        const validatorObj = req.body;
+        const validation = new Validator(validatorObj, VALIDATION_RULES.COUNTRY.id);
+
+        const query = `SELECT cities FROM countries WHERE country = ${country};`;
+        const [cities, metadata] = await sequelize.query(query);
+
+        if (!cities) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
+
+        return res.status(200).json({
+            status: HTTP_STATUS_CODES.SUCCESS,
+            message: '',
+            data: '',
+            error: ''
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            message: '',
+            data: '',
+            error: error.message
+        })
+    }
+}
+
+const GetSubCategories = async (req, res) => {
+    try {
+
+        const { category } = req.body;
+        const validatorObj = req.body;
+
+        const validation = new Validator(validatorObj, VALIDATION_RULES.CATEGORY.id);
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: 'Validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
+
+        const query = `SELECT cities FROM categories WHERE category = ${category};`;
+        const [subCategories, metadata] = await sequelize.query(query);
+
+        if (!subCategories) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: 'No sub categories found',
+                data: '',
+                error: ''
+            })
+        }
+
+        return res.status(200).json({
+            status: HTTP_STATUS_CODES.SUCCESS,
+            message: '',
+            data: '',
+            error: ''
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            message: '',
+            data: '',
+            error: error.message
+        })
+    }
+}
+
+module.exports = { GetCountries, GetCategories, GetCities, GetSubCategories }

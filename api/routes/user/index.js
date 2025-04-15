@@ -13,7 +13,7 @@ const { AccountRoutes } = require('./account/AccountRoutes.js');
 const { ProfileRoutes } = require('./profile/ProfileRoutes.js');
 const { CategoryRoutes } = require('./account/CategoryRoutes.js');
 const { CountryRoutes } = require('./profile/CountryRoutes.js');
-const { GetCountries, GetCategories } = require('./../../controllers/user/DropdownController');
+const { GetCountries, GetCategories, GetCities, GetSubCategories } = require('./../../controllers/user/DropdownController');
 
 const router = express.Router();
 
@@ -28,5 +28,11 @@ router.route('/drop-down/countries')
 
 router.route('/drop-down/categories')
     .get(GetCategories);
+
+router.route('/drop-down/sub-categories')
+    .get(GetSubCategories);
+
+router.route('/drop-down/cities')
+    .get(GetCities);
 
 module.exports = { UserRoutes: router };
