@@ -15,7 +15,7 @@ const { CreateAccount,
 
 const router = express.Router();
 
-router.route('/ListAccounts')
+router.route('/list')
     .all(isUser)
     .get(ListAccounts);
 

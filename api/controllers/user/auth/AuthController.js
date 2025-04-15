@@ -75,9 +75,13 @@ const SignUp = async (req, res) => {
 const LogIn = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const validationObj = req.body;
+        console.log('email, password: ', email, password);
+        console.log('req.body: ', req.body);
 
-        const validation = new Validator(validationObj, VALIDATION_RULES.USER.email, VALIDATION_RULES.USER.password);
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, { email: VALIDATION_RULES.USER.email, password: VALIDATION_RULES.USER.password });
+
+        console.log('VALIDATION_RULES.USER.email, VALIDATION_RULES.USER.password: ', VALIDATION_RULES.USER.email, VALIDATION_RULES.USER.password);
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -147,10 +151,12 @@ const LogIn = async (req, res) => {
 
 const LogOut = async (req, res) => {
     try {
-        const { token } = req.body;
+        const reqUser = req.user;
+        const token = reqUser.token;
+        console.log('token: ', token);
 
-        const validationObj = req.body;
-        const validation = new Validator(validationObj, VALIDATION_RULES.USER.token);
+        const validationObj = { token };
+        const validation = new Validator(validationObj, { token: VALIDATION_RULES.USER.token });
 
         if (validation.fails()) {
             return res.status(400).json({

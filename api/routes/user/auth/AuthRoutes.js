@@ -12,10 +12,13 @@ const isUser = require('../../../middlewares/isUser');
 
 const router = express.Router();
 
-router.post('/sign-up', SignUp);
-router.post('/log-in', LogIn);
+router.route('/signup')
+    .post(SignUp);
 
-router.route('/log-out')
+router.route('/login')
+    .post(LogIn);
+
+router.route('/logout')
     .all(isUser)
     .post(LogOut);
 

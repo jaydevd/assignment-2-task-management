@@ -15,6 +15,7 @@ const jwt = require('jsonwebtoken');
 const { Account } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { VALIDATION_RULES } = require('../../../models/validations');
+const { sequelize } = require('../../../config/database');
 
 const CreateAccount = async (req, res) => {
     try {
@@ -69,19 +70,24 @@ const ListAccounts = async (req, res) => {
 
         // List accounts with filter
         const { category, subCategory, query, page } = req.query;
-        const limit = 2;
+        const reqUser = req.user;
+        console.log(reqUser);
+
+        const userID = reqUser.id;
+
+        const limit = 5;
         const skip = Number(page - 1) * limit;
         console.log("skip: ", skip);
 
         console.log("ListUsers API");
 
         const rawQuery = `
-        SELECT a.id, a.name, a.name AS category, sub_cat_obj->>'name' AS sub_category, a.description
+        SELECT a.id, a.name, c.name AS category, sub_cat_obj->>'name' AS sub_category
         FROM accounts a
         JOIN categories c ON a.category = c.id
-        JOIN LATERAL jsonb_array_elements(c.sub_categories) AS city(city_obj)
-        ON city_obj->>'id' = a.sub_category
-        WHERE a.name ILIKE '%${query || ''}%' AND c.name ILIKE '%${category || ''}%' AND sub_cat_obj->>'name' ILIKE '%${subCategory || ''}%'
+        JOIN LATERAL jsonb_array_elements(c.sub_categories) AS sub_category(sub_cat_obj)
+        ON sub_cat_obj->>'id' = a.sub_category
+        WHERE a.created_by = '${userID}' AND a.name ILIKE '%${query || ''}%' AND c.name ILIKE '%${category || ''}%' AND sub_cat_obj->>'name' ILIKE '%${subCategory || ''}%'
         LIMIT ${limit || 10} OFFSET ${skip || 0}
         `;
 

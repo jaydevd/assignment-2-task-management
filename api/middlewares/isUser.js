@@ -28,7 +28,6 @@ const isUserAuthenticated = async (req, res, next) => {
             })
         }
 
-        // Verify JWT
         const payload = jwt.verify(token, process.env.SECRET_KEY);
 
         if (!payload) {
@@ -54,6 +53,8 @@ const isUserAuthenticated = async (req, res, next) => {
             });
         }
 
+
+
         if (!user.isActive) {
             return res.status(401).json({
                 status: HTTP_STATUS_CODES.UNAUTHORIZED,
@@ -73,6 +74,7 @@ const isUserAuthenticated = async (req, res, next) => {
         }
 
         req.user = user;
+        console.log("authentication done");
         next();
     }
     catch (error) {
