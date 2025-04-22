@@ -7,13 +7,14 @@
  */
 
 const express = require('express');
-const { GetTasks, UpdateTask, Comment } = require('./../../../controllers/user/task/TaskController');
+const { ListTasks, UpdateTask, Comment } = require('./../../../controllers/user/task/TaskController');
 const { isUser } = require('./../../../middleware/isUser');
+const { cache } = require('../../../middleware/cache');
 const router = express.Router();
 
 router.route('/tasks')
-    .all(isUser)
-    .post(GetTasks);
+    .all(isUser, cache)
+    .get(ListTasks);
 
 router.route('/comment')
     .all(isUser)

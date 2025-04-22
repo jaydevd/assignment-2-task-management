@@ -3,21 +3,25 @@ const path = require('path');
 const hbs = require('nodemailer-express-handlebars').default;
 
 const transporter = nodemailer.createTransport({
-    service: 'Gmail',
+    host: 'bulk.smtp.mailtrap.io',
+    port: 587,
+    pool: true,
     auth: {
-        user: 'jaydevdwd@gmail.com',
-        pass: process.env.EMAIL_PASSWORD,
+        user: 'api',
+        pass: process.env.EMAIL_PASSWORD
     },
+    maxMessages: Infinity,
+    maxConnections: 5
 });
 
 const handlebarOptions = {
     viewEngine: {
         extname: '.hbs',
-        partialsDir: path.resolve('./templates/partials'),
-        layoutsDir: path.resolve('./templates'),
+        partialsDir: path.resolve(__dirname, '../templates/partials'),
+        layoutsDir: path.resolve(__dirname, '../templates'),
         defaultLayout: false,
     },
-    viewPath: path.resolve('./templates'),
+    viewPath: path.resolve(__dirname, '../templates'),
     extName: '.hbs',
 };
 

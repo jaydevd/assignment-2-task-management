@@ -5,6 +5,11 @@
  * @description This file will contain all constants used across the API.
  * @author Jaydev Dwivedi (Zignuts)
  */
+const STATUS = {
+    progress: 'in-progress',
+    pending: 'pending',
+    completed: 'completed'
+}
 
 const HTTP_STATUS_CODES = {
 
@@ -25,5 +30,6 @@ const HTTP_STATUS_CODES = {
 }
 
 module.exports = {
+    STATUS,
     HTTP_STATUS_CODES
 }

@@ -14,7 +14,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { Sequelize, Op, where } = require('sequelize');
-const { VALIDATION_RULES } = require('./../../../models/validations');
+const { VALIDATION_RULES } = require('../../../config/validations');
 
 const UpdateProfile = async (req, res) => {
 

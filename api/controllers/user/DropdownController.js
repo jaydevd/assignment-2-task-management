@@ -15,7 +15,7 @@ const jwt = require('jsonwebtoken');
 const { Country } = require('./../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../config/constants');
 const { sequelize } = require('./../../config/database');
-const { VALIDATION_RULES } = require('../../models/validations');
+const { VALIDATION_RULES } = require('../../config/validations');
 
 const GetCountries = async (req, res) => {
     try {

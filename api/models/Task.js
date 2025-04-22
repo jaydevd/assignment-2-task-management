@@ -15,7 +15,8 @@ const Task = sequelize.define("Task", {
         type: DataTypes.STRING(60),
         primaryKey: true
     },
-    user: {
+    userId: {
+        field: 'user_id',
         type: DataTypes.STRING(60),
         references: {
             key: 'id',
@@ -29,6 +30,9 @@ const Task = sequelize.define("Task", {
     dueDate: {
         field: 'due_date',
         type: DataTypes.DATE,
+    },
+    comments: {
+        type: DataTypes.JSONB
     },
     status: {
         type: DataTypes.ENUM(['pending', 'in-progress', 'completed'])

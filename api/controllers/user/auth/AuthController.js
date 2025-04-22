@@ -15,21 +15,23 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { Sequelize, Op } = require('sequelize');
-const { VALIDATION_RULES } = require('../../../models/validations');
+const { VALIDATION_RULES } = require('../../../config/validations');
 const client = require('../../../config/redis');
 const { sequelize } = require('../../../config/database');
+const { startCronJobs } = require('../../../cron');
+const { transporter } = require('../../../config/transporter');
 
 const SignUp = async (req, res) => {
 
     try {
-        const { name, email, password, age, gender, country, city, company } = req.body;
+        const { name, email, password } = req.body;
 
         const validationObj = req.body;
         let validation = new Validator(validationObj, VALIDATION_RULES.USER);
 
         if (validation.fails()) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 data: '',
                 message: 'Validation failed',
                 error: validation.errors.all()
@@ -44,21 +46,18 @@ const SignUp = async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            age,
-            gender,
-            country,
-            city,
-            company: company || null,
             createdBy: id,
             createdAt: Math.floor(Date.now() / 1000),
             isActive: true,
             isDeleted: false
         });
 
+        startCronJobs(transporter, email, { });
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             data: result.id,
-            message: 'Sign Up Successful',
+            message: 'Sign up Successful',
             error: ''
         });
 
@@ -83,33 +82,32 @@ const LogIn = async (req, res) => {
 
         if (validation.fails()) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 data: '',
                 message: 'Validation failed',
                 error: validation.errors.all()
             })
         }
 
-        const user = await User.findOne({
-            where: { email: email },
-            attributes: ['id', 'name', 'email', 'password', 'task_list', 'token']
-        });
+        const query = `
+        SELECT u.id, u.name, u.email, u.password, u.token FROM users u
+        WHERE u.is_active = true AND u.email = '${email}';
+        `;
+        const [user, metadata] = await sequelize.query(query);
 
-        if (!user) {
+        if (!user[0]) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: "User Not Found",
                 data: "",
                 error: ""
             });
-
         }
-
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user[0].password);
 
         if (!isMatch) {
             return res.status(400).json({
-                status: PAGE_NOT_FOUND,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: "Invalid Credentials",
                 data: "",
                 error: "Password doesn't match"
@@ -118,35 +116,30 @@ const LogIn = async (req, res) => {
 
         const secretKey = process.env.SECRET_KEY;
 
-        const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user[0].id }, secretKey, { expiresIn: '1h' });
 
         const result = await User.update(
             { token: token },
             {
                 where: {
-                    id: user.id,
+                    id: user[0].id,
                 },
             },
         );
 
-        const query = `
-        SELECT id, description, due_date, status, created_by FROM tasks
-        WHERE user = ${id}
-        `
+        console.log(user[0].id);
 
-        const [tasks, metadata] = sequelize.query(query);
+        const taskQuery = `
+        SELECT t.id, t.description, t.status, t.comments, t.due_date, t.user_id, u.name FROM tasks t
+        JOIN users u
+        ON t.user_id = u.id
+        WHERE u.id = '${user[0].id}'
+        `;
+        const [tasks, meta] = await sequelize.query(taskQuery);
+        console.log(tasks);
 
-        if (!tasks) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'Tasks not found',
-                data: '',
-                error: ''
-            })
-        }
-
-        client.set('user', user);
-        client.set('tasks', tasks);
+        client.set('user', JSON.stringify(user));
+        client.set('tasks', JSON.stringify(tasks));
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -158,10 +151,10 @@ const LogIn = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             data: '',
             message: '',
-            error: ''
+            error: error.message
         });
     }
 }

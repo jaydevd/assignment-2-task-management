@@ -1,6 +1,11 @@
+const admin = require('firebase-admin');
 const users = new Map();
 
-module.exports = (io) => {
+admin.initializeApp({
+    credential: admin.credential.cert(require('./../../service-account.json'))
+});
+
+module.exports = async (io) => {
     io.on('connection', (socket) => {
 
         // Listen for user joining
@@ -10,14 +15,33 @@ module.exports = (io) => {
             console.log(`User ${userId} registered with socket ID ${socket.id}`);
         });
 
-        // Listen for private messages
-        socket.on('private_message', ({ to, message }) => {
-            console.log("message received", to, message);
+        // Listen for comments
+        socket.on('comment', ({ to, comment }) => {
+            console.log("comment received", to, comment);
+            const payload = {
+                notification: {
+                    title: 'Task Management System',
+                    body: { comment, from, to },
+                },
+                token: fcmToken,
+            };
+
+            const response = await admin.messaging().send(payload);
             const targetSocketId = users.get(to);
             if (targetSocketId) {
-                io.to(targetSocketId).emit('private_message', {
+                io.to(targetSocketId).emit('comment', {
                     from: socket.id,
-                    message,
+                    comment,
+                });
+            }
+        });
+
+        socket.on('update_task', ({ to, task }) => {
+            const targetSocketId = users.get(to);
+            if (targetSocketId) {
+                io.to(targetSocketId).emit('update_task', {
+                    from: socket.id,
+                    task,
                 });
             }
         });

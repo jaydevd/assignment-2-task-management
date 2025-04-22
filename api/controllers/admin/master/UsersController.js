@@ -16,7 +16,7 @@ const { User } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 const { Sequelize, Op } = require('sequelize');
-const { VALIDATION_RULES } = require('../../../models/validations');
+const { VALIDATION_RULES } = require('../../../config/validations');
 
 const ListUsers = async (req, res) => {
     try {

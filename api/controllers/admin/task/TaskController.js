@@ -16,7 +16,7 @@ const { User, Task } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 const { Sequelize, Op } = require('sequelize');
-const { VALIDATION_RULES } = require('../../../models/validations');
+const { VALIDATION_RULES } = require('../../../config/validations');
 
 const ListTasks = async (req, res) => {
     try {
@@ -67,16 +67,32 @@ const AssignTask = async (req, res) => {
     try {
         const admin = req.admin;
         const adminID = admin.id;
-        const { user, description, dueDate } = req.body;
+        const { userId, description, dueDate, status, comments } = req.body;
+
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
 
         const id = uuidv4();
+        const createdAt = new Date(Math.floor(Date.now() / 1000) * 1000);
+        console.log(createdAt);
 
         const result = await Task.create({
             id,
             description,
             dueDate,
-            user,
-            createdAt: Math.floor(Date.now() / 1000),
+            userId,
+            status,
+            comments: comments || null,
+            createdAt,
             createdBy: adminID,
             isActive: true,
             isDeleted: false
@@ -85,7 +101,7 @@ const AssignTask = async (req, res) => {
         if (!result) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
+                message: 'Data not inserted into DB.',
                 data: '',
                 error: ''
             })
@@ -93,10 +109,10 @@ const AssignTask = async (req, res) => {
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
-            data: '',
+            message: 'Data inserted',
+            data: result.id,
             error: ''
-        })
+        });
 
     } catch (error) {
         console.log(error);
@@ -119,7 +135,7 @@ const Comment = async (req, res) => {
         const rawQuery = `
         UPDATE tasks
         SET comments = comments || '[{"id": '${id}', "comment":'${comment}', "from":'${from}', "to": '${to}'}]'::jsonb
-        WHERE id = taskID
+        WHERE id = '${taskID}'
         `;
         const result = await sequelize.query(rawQuery);
         return res.status(200).json({

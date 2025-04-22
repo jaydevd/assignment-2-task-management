@@ -41,7 +41,7 @@ const isUser = async (req, res, next) => {
 
         const user = await User.findOne({
             where: { token: token, id: payload.id },
-            attributes: ['id', 'name', 'email', 'country', 'city', 'company', 'age', 'gender', 'token', 'isActive']
+            attributes: ['id', 'name', 'email', 'token', 'isActive']
         });
 
         if (!user) {

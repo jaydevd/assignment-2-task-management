@@ -30,7 +30,7 @@ const Admin = sequelize.define("Admin", {
         unique: false
     },
     token: {
-        type: DataTypes.STRING(500),
+        type: DataTypes.STRING(200),
         allowNull: true,
         unique: true,
     },

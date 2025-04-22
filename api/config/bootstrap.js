@@ -11,7 +11,7 @@
 const { Admin } = require("../models/index");
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
-const { VALIDATION_RULES } = require("../models/validations");
+const { VALIDATION_RULES } = require("./validations");
 const Validator = require('validatorjs');
 
 module.exports.bootstrap = async () => {

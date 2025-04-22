@@ -14,7 +14,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { Sequelize, Op } = require('sequelize');
-const { VALIDATION_RULES } = require('../../../models/validations');
+const { VALIDATION_RULES } = require('../../../config/validations');
 
 const LogIn = async (req, res) => {
     try {
@@ -28,12 +28,14 @@ const LogIn = async (req, res) => {
 
         if (validation.fails()) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 data: '',
                 message: 'Validation failed',
                 error: validation.errors.all()
             })
         }
+
+        console.log("Validation passed");
 
         const admin = await Admin.findOne({
             where: { email: email },
@@ -42,7 +44,7 @@ const LogIn = async (req, res) => {
 
         if (!admin) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: "Admin Not Found",
                 data: "",
                 error: ""
@@ -53,7 +55,7 @@ const LogIn = async (req, res) => {
 
         if (!isMatch) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: "Invalid Credentials",
                 data: "",
                 error: "Password doesn't match"
@@ -73,8 +75,10 @@ const LogIn = async (req, res) => {
             },
         );
 
+        console.log("Token stored");
+
         return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
             data: token,
             message: '',
             error: ''
@@ -83,7 +87,7 @@ const LogIn = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             data: '',
             message: '',
             error: error.message

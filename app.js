@@ -6,6 +6,17 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const { bootstrap } = require('./api/config/bootstrap.js');
 const app = express();
+const http = require('http');
+const { Server } = require('socket.io');
+const socket = require('./api/config/socket.js');
+
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: 'http://localhost:5173',
+        methods: ['GET', 'POST']
+    }
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -34,9 +45,10 @@ const Bootstrap = async () => {
 }
 
 Bootstrap();
+socket(io);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log("Server running on http://localhost:5000");
 });

@@ -5,6 +5,10 @@ const cache = async (req, res, next) => {
 
     try {
         const user = await client.get('user');
+        const tasks = await client.get('tasks');
+        console.log(user);
+        console.log(tasks);
+
         if (!user) {
             return res.status(404).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
@@ -14,20 +18,8 @@ const cache = async (req, res, next) => {
             })
         }
 
-        const userJSON = JSON.parse(user);
-        const tasks = await client.get('tasks');
-
-        if (!tasks) {
-            return res.status(404).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
-
-        req.user = userJSON;
-        req.tasks = tasks;
+        req.user = JSON.parse(user);
+        req.tasks = JSON.parse(tasks);
         next();
 
     } catch (err) {

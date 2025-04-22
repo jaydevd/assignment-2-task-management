@@ -12,26 +12,55 @@ const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { User, Task } = require('./../../../models/index');
+const { Task } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 const { Sequelize, Op } = require('sequelize');
-const { VALIDATION_RULES } = require('../../../models/validations');
+const { VALIDATION_RULES } = require('../../../config/validations');
+const admin = require('firebase-admin');
 
-const GetTasks = async (req, res) => {
+admin.initializeApp({
+    credential: admin.credential.cert(require('./service-account.json'))
+});
+
+const ListTasks = async (req, res) => {
     try {
-        const { id } = req.body;
-        const validationObj = req.body;
+        const { id, page } = req.body;
+
+        const limit = 2;
+        const skip = Number(page - 1) * limit;
+
+        const cacheTasks = req.tasks;
+        console.log(cacheTasks);
+
+        if (cacheTasks) {
+            return res.status(200).json({
+                status: HTTP_STATUS_CODES.SUCCESS.OK,
+                message: '',
+                data: cacheTasks,
+                error: ''
+            })
+        }
+
+        const validationObj = { id };
         const validation = new Validator(validationObj, {
             id: VALIDATION_RULES.USER.id
-        })
+        });
 
-        const tasks = await Task.findOne({ attributes: ['id', 'title', 'taskList', 'dueDate', 'user', 'isActive'], where: { user: id } });
-
-        if (!isActive) {
+        if (validation.fails()) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.FORBIDDEN,
-                message: 'Task deleted',
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
+
+        const tasks = await Task.findAll({ attributes: ['id', 'description', 'status', 'dueDate', 'userId', 'isActive'], where: { userId: id, isActive: true } });
+        if (!tasks) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'tasks not found',
                 data: '',
                 error: ''
             })
@@ -43,6 +72,7 @@ const GetTasks = async (req, res) => {
             data: tasks,
             error: ''
         })
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -57,19 +87,46 @@ const GetTasks = async (req, res) => {
 const Comment = async (req, res) => {
     try {
 
-        // const { comment } = req.body;
-        const [result, metadata] = sequelize.query
+        const { taskID, comment, from, to, fcmToken } = req.body;
+        const id = uuidv4();
+
+        const rawQuery = `
+        UPDATE tasks
+        SET comments = comments || '[{"id": '${id}', "comment":'${comment}', "from":'${from}', "to": '${to}'}]'::jsonb
+        WHERE id = '${taskID}'
+        `;
+        const [result, metadata] = await sequelize.query(rawQuery);
+
+        const payload = {
+            notification: {
+                title: 'Task Management System',
+                body: { comment, from, to },
+            },
+            token: fcmToken,
+        };
+
+        const response = await admin.messaging().send(payload);
+
+        if (!response) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: '',
+                data: '',
+                error: ''
+            });
+        }
 
         return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
             data: '',
             error: ''
-        })
+        });
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             message: '',
             data: '',
             error: error.message
@@ -79,8 +136,8 @@ const Comment = async (req, res) => {
 
 const UpdateTask = async (req, res) => {
     try {
-        const { id } = req.body;
-        const result = await Task.update({ isActive: false, isDeleted: true }, { where: { id: id } });
+        const { id, description, status, comments, dueDate } = req.body;
+        const result = await Task.update({ status, description, comments, dueDate }, { where: { id: id } });
 
         if (!result) {
             return res.status(400).json({
@@ -90,12 +147,24 @@ const UpdateTask = async (req, res) => {
                 error: ''
             })
         }
+
+        const payload = {
+            notification: {
+                title: 'Task Management System',
+                body: "Task updated",
+            },
+            token: fcmToken,
+        };
+
+        const response = await admin.messaging().send(payload);
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
             data: '',
             error: ''
-        })
+        });
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -108,7 +177,7 @@ const UpdateTask = async (req, res) => {
 }
 
 module.exports = {
-    GetTasks,
+    ListTasks,
     UpdateTask,
     Comment
 }
