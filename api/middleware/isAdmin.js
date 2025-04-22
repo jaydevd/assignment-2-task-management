@@ -1,6 +1,6 @@
 /**
- * @name userAuthentication
- * @file isAdminAuthenticated.js
+ * @name AdminAuthentication
+ * @file isAdmin.js
  * @param {Request} req
  * @param {Response} res
  * @param {next} next
@@ -22,7 +22,7 @@ const isAdmin = async (req, res, next) => {
 
     if (!token) {
       return res.status(400).json({
-        status: HTTP_STATUS_CODES.CLIENT_ERROR,
+        status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
         message: '',
         data: '',
         error: 'Token not found'
@@ -34,7 +34,7 @@ const isAdmin = async (req, res, next) => {
 
     if (!payload) {
       return res.status(401).json({
-        status: HTTP_STATUS_CODES.UNAUTHORIZED,
+        status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
         message: '',
         error: 'Invalid Token',
         data: ''
@@ -50,7 +50,7 @@ const isAdmin = async (req, res, next) => {
 
     if (!admin.id) {
       return res.status(401).json({
-        status: HTTP_STATUS_CODES.UNAUTHORIZED,
+        status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
         message: '',
         error: 'No user found',
         data: ''
@@ -60,7 +60,7 @@ const isAdmin = async (req, res, next) => {
     if (!admin.isActive) {
       console.log("admin active? ", admin.isActive);
       return res.status(403).json({
-        status: HTTP_STATUS_CODES.FORBIDDEN,
+        status: HTTP_STATUS_CODES.CLIENT_ERROR.FORBIDDEN,
         message: '',
         error: 'Admin is not active',
         data: ''
@@ -69,21 +69,21 @@ const isAdmin = async (req, res, next) => {
 
     if (token !== admin.token) {
       return res.status(401).json({
-        status: HTTP_STATUS_CODES.UNAUTHORIZED,
+        status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
         message: '',
         data: '',
         error: "Tokens don't match"
       });
     }
 
-    req.body.admin = admin;
+    req.admin = admin;
     next();
 
   } catch (error) {
 
     console.log(error);
     return res.status(500).json({
-      status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
       message: '',
       data: '',
       error: error.message
@@ -91,4 +91,4 @@ const isAdmin = async (req, res, next) => {
   }
 }
 
-module.exports = isAdmin;
+module.exports = { isAdmin };

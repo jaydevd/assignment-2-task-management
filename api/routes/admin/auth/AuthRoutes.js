@@ -8,7 +8,7 @@
 
 const express = require('express');
 const router = express.Router();
-const isAdmin = require('../../../middlewares/isAdmin');
+const { isAdmin } = require('../../../middleware/isAdmin');
 const { LogIn, LogOut } = require('../../../controllers/admin/auth/AuthController');
 
 router.post('/login', LogIn);

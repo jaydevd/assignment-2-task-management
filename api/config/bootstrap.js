@@ -7,34 +7,48 @@
  * @description AdminSignUp method will create a new user, AdminLogIn method will log in an existing user and AdminLogOut method will log out the logged in user.
  * @author Jaydev Dwivedi (Zignuts)
  */
-const { Admin, User, CountriesCities, Categories } = require("../models/index");
+
+const { Admin } = require("../models/index");
 const { v4: uuidv4 } = require('uuid');
-const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { HTTP_STATUS_CODES } = require('./constants');
-const { Sequelize, Op } = require('sequelize');
+const { VALIDATION_RULES } = require("../models/validations");
+const Validator = require('validatorjs');
 
 module.exports.bootstrap = async () => {
     try {
+        const admin = await Admin.findAll({ attributes: ['id', 'name', 'email', 'password'] }, { limit: 1 });
 
-        const result = Admin.findAll({ attributes: ['id', 'name', 'email', 'password'] }, { limit: 1 });
-        if (!result) {
-            const name = "Admin";
-            const password = "1234";
-            const hashedPassword = bcrypt.hash(password, 10);
+        if (Object.keys(admin).length == 0) {
 
-            const response = await Admin.create({
+            const id = uuidv4();
+            const name = "Test User";
+            const email = "test@gmail.com"
+            const password = process.env.ADMIN_PASSWORD;
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const createdAt = new Date(Math.floor(Date.now() / 1000) * 1000);
+
+            const validationObj = { id, name, email, password: hashedPassword };
+            console.log(validationObj);
+            const validation = new Validator(validationObj, VALIDATION_RULES.ADMIN);
+
+            if (validation.fails()) {
+                throw new Error("Validation failed", validation.errors.all());
+            }
+
+            const result = await Admin.create({
                 id: id,
                 name: name,
                 email: email,
                 password: hashedPassword,
-                gender: gender,
-                created_at: Math.floor(Data.now() / 1000),
-                created_by: id,
-                is_active: true,
-                is_deleted: false
+                createdAt: createdAt,
+                createdBy: id,
+                isActive: true,
+                isDeleted: false
             });
+
+            if (!result) {
+                throw new Error("Unable to create admin");
+            }
         }
     } catch (error) {
         throw new Error(error);

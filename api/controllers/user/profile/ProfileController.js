@@ -19,7 +19,7 @@ const { VALIDATION_RULES } = require('./../../../models/validations');
 const UpdateProfile = async (req, res) => {
 
     try {
-        const { id, name, gender, age, country, city, company } = req.body;
+        const { id, name } = req.body;
 
         const validationObj = req.body;
         let validation = new Validator(validationObj, VALIDATION_RULES.USER);

@@ -8,7 +8,7 @@
  * @author Jaydev Dwivedi (Zignuts)
  */
 
-const { User } = require('../../../models/index');
+const { User, Task } = require('../../../models/index');
 const { v4: uuidv4 } = require('uuid');
 const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
@@ -16,6 +16,8 @@ const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { Sequelize, Op } = require('sequelize');
 const { VALIDATION_RULES } = require('../../../models/validations');
+const client = require('../../../config/redis');
+const { sequelize } = require('../../../config/database');
 
 const SignUp = async (req, res) => {
 
@@ -54,9 +56,9 @@ const SignUp = async (req, res) => {
         });
 
         return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
             data: result.id,
-            message: 'Data Created Successfully',
+            message: 'Sign Up Successful',
             error: ''
         });
 
@@ -90,7 +92,7 @@ const LogIn = async (req, res) => {
 
         const user = await User.findOne({
             where: { email: email },
-            attributes: ['id', 'name', 'email', 'password', 'age', 'gender', 'country', 'city', 'company', 'token']
+            attributes: ['id', 'name', 'email', 'password', 'task_list', 'token']
         });
 
         if (!user) {
@@ -127,8 +129,27 @@ const LogIn = async (req, res) => {
             },
         );
 
+        const query = `
+        SELECT id, description, due_date, status, created_by FROM tasks
+        WHERE user = ${id}
+        `
+
+        const [tasks, metadata] = sequelize.query(query);
+
+        if (!tasks) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'Tasks not found',
+                data: '',
+                error: ''
+            })
+        }
+
+        client.set('user', user);
+        client.set('tasks', tasks);
+
         return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
             data: { user, token },
             message: '',
             error: ''

@@ -9,7 +9,6 @@
  */
 
 const { Admin } = require("../../../models/index");
-const { v4: uuidv4 } = require('uuid');
 const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -20,7 +19,6 @@ const { VALIDATION_RULES } = require('../../../models/validations');
 const LogIn = async (req, res) => {
     try {
         const { email, password } = req.body;
-
         const validationObj = req.body;
 
         let validation = new Validator(validationObj, {
@@ -110,6 +108,15 @@ const LogOut = async (req, res) => {
         const validationObj = { token };
         const validation = new Validator(validationObj, VALIDATION_RULES.ADMIN.token);
 
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
+
         const admin = await Admin.findOne({
             where: { token: token },
             attributes: ['id', 'token']
@@ -126,12 +133,22 @@ const LogOut = async (req, res) => {
 
         const result = Admin.update({ token: null }, { where: { id: admin.id } });
 
+        if (!result) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                message: 'Admin not found',
+                data: '',
+                error: ''
+            })
+        }
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: 'Logged out successfully',
             data: '',
             error: ''
         })
+
     } catch (error) {
         console.log(error);
 

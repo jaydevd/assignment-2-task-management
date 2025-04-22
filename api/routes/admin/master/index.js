@@ -8,14 +8,12 @@
 
 const express = require('express');
 
-const { CountryRoutes } = require('./CountryRoutes');
-const { CategoryRoutes } = require('./CategoryRoutes');
+const { TaskRoutes } = require('./TaskRoutes');
 const { UsersRoutes } = require('./UsersRoutes');
 
 const router = express.Router();
 
-router.use('/country', CountryRoutes);
-router.use('/category', CategoryRoutes);
+router.use('/task', TaskRoutes);
 router.use('/users', UsersRoutes);
 
 module.exports = { MasterRoutes: router };

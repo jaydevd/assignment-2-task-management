@@ -7,12 +7,20 @@
  */
 
 const express = require('express');
-const { UpdateProfile } = require('./../../../controllers/user/profile/ProfileController');
+const { GetTasks, UpdateTask, Comment } = require('./../../../controllers/user/task/TaskController');
 const { isUser } = require('./../../../middleware/isUser');
 const router = express.Router();
 
+router.route('/tasks')
+    .all(isUser)
+    .post(GetTasks);
+
+router.route('/comment')
+    .all(isUser)
+    .post(Comment);
+
 router.route('/update')
     .all(isUser)
-    .post(UpdateProfile);
+    .post(UpdateTask);
 
-module.exports = { ProfileRoutes: router }; 
+module.exports = { TaskRoutes: router };

@@ -7,8 +7,8 @@
  */
 
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database.js");
-const { commonAttributes } = require('./CommonAttributes.js');
+const { sequelize } = require("../config/database");
+const { commonAttributes } = require('./CommonAttributes');
 
 const User = sequelize.define("User", {
     id: {
@@ -24,37 +24,6 @@ const User = sequelize.define("User", {
         allowNull: false,
         unique: true
     },
-    age: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        unique: false
-    },
-    gender: {
-        type: DataTypes.STRING(10),
-        allowNull: false,
-        unique: false
-    },
-    city: {
-        type: DataTypes.STRING(60),
-        allowNull: false,
-        references: {
-            model: 'cities',
-            key: 'id'
-        }
-    },
-    country: {
-        type: DataTypes.STRING(60),
-        allowNull: false,
-        references: {
-            model: 'countries',
-            key: 'id'
-        }
-    },
-    company: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-        unique: false
-    },
     token: {
         type: DataTypes.STRING(500),
         allowNull: true,
@@ -68,8 +37,9 @@ const User = sequelize.define("User", {
     ...commonAttributes
 },
     {
-        tableName: "users", // Explicitly set the table name
-        timestamps: false   // If your table does not have createdAt/updatedAt
-    });
+        tableName: "users",
+        timestamps: false
+    }
+);
 
 module.exports = { User };

@@ -21,7 +21,7 @@ const isUser = async (req, res, next) => {
 
         if (!token) {
             return res.status(401).json({
-                status: HTTP_STATUS_CODES.UNAUTHORIZED,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
                 message: '',
                 data: '',
                 error: 'Token not found'
@@ -32,7 +32,7 @@ const isUser = async (req, res, next) => {
 
         if (!payload) {
             return res.status(401).json({
-                status: HTTP_STATUS_CODES.UNAUTHORIZED,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
                 message: '',
                 error: 'Invalid Token',
                 data: ''
@@ -46,7 +46,7 @@ const isUser = async (req, res, next) => {
 
         if (!user) {
             return res.status(401).json({
-                status: HTTP_STATUS_CODES.UNAUTHORIZED,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
                 message: '',
                 error: 'User not found',
                 data: ''
@@ -57,7 +57,7 @@ const isUser = async (req, res, next) => {
 
         if (!user.isActive) {
             return res.status(401).json({
-                status: HTTP_STATUS_CODES.UNAUTHORIZED,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
                 message: '',
                 error: 'User not active',
                 data: ''
@@ -66,7 +66,7 @@ const isUser = async (req, res, next) => {
 
         if (token !== user.token) {
             return res.status(401).json({
-                status: HTTP_STATUS_CODES.UNAUTHORIZED,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
                 message: '',
                 data: '',
                 error: "Tokens don't match"
@@ -80,7 +80,7 @@ const isUser = async (req, res, next) => {
     catch (error) {
         console.log(error);
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             message: '',
             data: '',
             error: error.message

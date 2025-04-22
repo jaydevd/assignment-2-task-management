@@ -7,8 +7,8 @@
  */
 
 const express = require('express');
-const isAdmin = require('../../../middlewares/isAdmin.js');
-const { ListUsers, EditUser, DeleteUser } = require('./../../../controllers/admin/master/UsersController.js');
+const { isAdmin } = require('../../../middleware/isAdmin');
+const { ListUsers, EditUser, DeleteUser } = require('./../../../controllers/admin/master/UsersController');
 
 const router = express.Router();
 

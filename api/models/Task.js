@@ -10,36 +10,34 @@ const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
 const { commonAttributes } = require('./CommonAttributes');
 
-const Admin = sequelize.define("Admin", {
+const Task = sequelize.define("Task", {
     id: {
         type: DataTypes.STRING(60),
         primaryKey: true
     },
-    name: {
+    user: {
+        type: DataTypes.STRING(60),
+        references: {
+            key: 'id',
+            model: 'users'
+        }
+    },
+    description: {
         type: DataTypes.STRING(60),
         allowNull: false,
     },
-    email: {
-        type: DataTypes.STRING(60),
-        allowNull: false,
-        unique: true
+    dueDate: {
+        field: 'due_date',
+        type: DataTypes.DATE,
     },
-    password: {
-        type: DataTypes.STRING(60),
-        allowNull: false,
-        unique: false
-    },
-    token: {
-        type: DataTypes.STRING(500),
-        allowNull: true,
-        unique: true,
+    status: {
+        type: DataTypes.ENUM(['pending', 'in-progress', 'completed'])
     },
     ...commonAttributes
 },
     {
-        tableName: "admins",
+        tableName: "tasks",
         timestamps: false
-    }
-);
+    });
 
-module.exports = { Admin };
+module.exports = { Task };
