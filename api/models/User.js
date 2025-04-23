@@ -41,5 +41,10 @@ const User = sequelize.define("User", {
         timestamps: false
     }
 );
+User.sync({ force: true }).then(() => {
+    console.log("User table synced successfully.");
+}).catch((err) => {
+    console.error("Error syncing User table:", err);
+});
 
 module.exports = { User };

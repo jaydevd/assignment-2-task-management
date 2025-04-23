@@ -19,10 +19,6 @@ const { Sequelize, Op } = require('sequelize');
 const { VALIDATION_RULES } = require('../../../config/validations');
 const admin = require('firebase-admin');
 
-admin.initializeApp({
-    credential: admin.credential.cert(require('./service-account.json'))
-});
-
 const ListTasks = async (req, res) => {
     try {
         const { id, page } = req.body;
@@ -96,16 +92,6 @@ const Comment = async (req, res) => {
         WHERE id = '${taskID}'
         `;
         const [result, metadata] = await sequelize.query(rawQuery);
-
-        const payload = {
-            notification: {
-                title: 'Task Management System',
-                body: { comment, from, to },
-            },
-            token: fcmToken,
-        };
-
-        const response = await admin.messaging().send(payload);
 
         if (!response) {
             return res.status(400).json({

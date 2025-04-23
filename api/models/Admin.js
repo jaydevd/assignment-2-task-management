@@ -42,4 +42,10 @@ const Admin = sequelize.define("Admin", {
     }
 );
 
+Admin.sync({ force: true }).then(() => {
+    console.log("User table synced successfully.");
+}).catch((err) => {
+    console.error("Error syncing User table:", err);
+});
+
 module.exports = { Admin };
