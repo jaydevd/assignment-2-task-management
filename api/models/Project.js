@@ -10,36 +10,27 @@ const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
 const { commonAttributes } = require('./CommonAttributes');
 
-const Admin = sequelize.define("Admin", {
+const Project = sequelize.define("Project", {
     id: {
         type: DataTypes.STRING(60),
         primaryKey: true
     },
     name: {
         type: DataTypes.STRING(60),
-        allowNull: false,
-    },
-    email: {
-        type: DataTypes.STRING(60),
-        allowNull: false,
         unique: true
     },
-    password: {
-        type: DataTypes.STRING(60),
-        allowNull: false,
-        unique: false
-    },
-    token: {
-        type: DataTypes.STRING(200),
-        allowNull: true,
-        unique: true,
+    members: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        references: {
+            key: 'id',
+            model: 'users'
+        }
     },
     ...commonAttributes
 },
     {
-        tableName: "admins",
+        tableName: "projects",
         timestamps: false
-    }
-);
+    });
 
-module.exports = { Admin };
+module.exports = { Project };

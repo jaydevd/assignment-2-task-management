@@ -38,7 +38,7 @@ const ListUsers = async (req, res) => {
 
         if (!users) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: 'No users found',
                 data: '',
                 error: ''
@@ -46,7 +46,7 @@ const ListUsers = async (req, res) => {
         }
 
         return res.status(200).json({
-            status: '200',
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
             data: users,
             error: ''
@@ -55,7 +55,7 @@ const ListUsers = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             message: '',
             data: '',
             error: error.message
@@ -63,7 +63,7 @@ const ListUsers = async (req, res) => {
     }
 }
 
-const EditUser = async (req, res) => {
+const UpdateUser = async (req, res) => {
     try {
         const { id, name, country, city, gender, age, company } = req.body;
 
@@ -72,7 +72,7 @@ const EditUser = async (req, res) => {
 
         if (validation.fails()) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: '',
                 data: '',
                 error: ''
@@ -88,16 +88,25 @@ const EditUser = async (req, res) => {
         }, {
             where: { id: id }
         })
+
+        if (!result) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'user not updated',
+                data: '',
+                error: ''
+            })
+        }
         return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
+            message: 'user updated',
             data: result,
             error: ''
-        })
+        });
     } catch (error) {
         console.log(error);
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             message: '',
             data: '',
             error: error.message
@@ -111,7 +120,7 @@ const DeleteUser = async (req, res) => {
 
         if (!id) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: '',
                 data: '',
                 error: ''
@@ -120,7 +129,7 @@ const DeleteUser = async (req, res) => {
         const result = await User.update({ isActive: false, isDeleted: true }, { where: { id: id } });
 
         return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
             data: '',
             error: ''
@@ -128,7 +137,7 @@ const DeleteUser = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             message: '',
             data: '',
             error: error.message
@@ -138,6 +147,6 @@ const DeleteUser = async (req, res) => {
 
 module.exports = {
     ListUsers,
-    EditUser,
+    UpdateUser,
     DeleteUser
 }

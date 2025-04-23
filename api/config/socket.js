@@ -17,7 +17,7 @@ module.exports = async (io) => {
             });
 
             // Listen for comments
-            socket.on('comment', ({ to, comment }) => {
+            socket.on('comment', ({ to, comment, fcmToken }) => {
                 console.log("comment received", to, comment);
                 const payload = {
                     notification: {
@@ -37,7 +37,7 @@ module.exports = async (io) => {
                 }
             });
 
-            socket.on('update_task', ({ to, task }) => {
+            socket.on('update_task', ({ to, task, fcmToken }) => {
                 const targetSocketId = users.get(to);
                 const payload = {
                     notification: {

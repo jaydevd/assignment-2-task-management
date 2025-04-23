@@ -35,7 +35,15 @@ const Task = sequelize.define("Task", {
         type: DataTypes.JSONB
     },
     status: {
-        type: DataTypes.ENUM(['pending', 'in-progress', 'completed'])
+        type: DataTypes.ENUM(['to-do', 'in-progress', 'done', 'on-hold', 'in-review', 'cancelled', 'postponed'])
+    },
+    projectId: {
+        field: 'project_id',
+        type: DataTypes.STRING(60),
+        references: {
+            key: 'id',
+            model: 'projects'
+        }
     },
     ...commonAttributes
 },

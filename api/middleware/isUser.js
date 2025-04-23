@@ -53,8 +53,6 @@ const isUser = async (req, res, next) => {
             });
         }
 
-
-
         if (!user.isActive) {
             return res.status(401).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,

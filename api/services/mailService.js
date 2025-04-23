@@ -1,13 +1,13 @@
 const transporter = require("../config/transporter");
 
-const mailService = (user) => {
+const mailService = (user, context) => {
 
     transporter.sendMail({
         from: 'api smtp@mailtrap.io',
         to: `${user.name} ${user.email}`,
-        subject: 'Bulk Email Test',
+        subject: 'Test mail',
         template: 'index',
-        context: { task: user.description, dueDate: user.dueDate, status: user.status, name: user.name }
+        context: { context }
     })
 }
 

@@ -8,17 +8,17 @@
 
 const express = require('express');
 const { isAdmin } = require('../../../middleware/isAdmin');
-const { ListUsers, EditUser, DeleteUser } = require('./../../../controllers/admin/master/UsersController');
+const { ListUsers, UpdateUser, DeleteUser } = require('./../../../controllers/admin/master/UsersController');
 
 const router = express.Router();
 
-router.route('/list-users')
+router.route('/list')
     .all(isAdmin)
     .get(ListUsers);
 
 router.route('/update-user')
     .all(isAdmin)
-    .post(EditUser);
+    .post(UpdateUser);
 
 router.route('/delete-user')
     .all(isAdmin)

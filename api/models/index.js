@@ -10,9 +10,11 @@
 const { User } = require('./User');
 const { Admin } = require('./Admin');
 const { Task } = require("./Task");
+const { Project } = require('./Project');
 
 module.exports = {
     User,
     Admin,
-    Task
+    Task,
+    Project
 };

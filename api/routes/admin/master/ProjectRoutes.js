@@ -8,34 +8,29 @@
 
 const express = require('express');
 const {
-    AssignTask,
-    UpdateTask,
-    Comment,
-    DeleteTask,
-    ListTasks
-} = require('../../../controllers/admin/master/TaskController');
+    ListProjects,
+    CreateProject,
+    UpdateProject,
+    DeleteProject
+} = require('../../../controllers/admin/master/ProjectController');
 const { isAdmin } = require('./../../../middleware/isAdmin');
 
 const router = express.Router();
 
 router.route('/list')
     .all(isAdmin)
-    .post(ListTasks);
+    .get(ListProjects);
 
-router.route('/assign')
+router.route('/create')
     .all(isAdmin)
-    .post(AssignTask);
-
-router.route('/comment')
-    .all(isAdmin)
-    .post(Comment);
+    .post(CreateProject);
 
 router.route('/update')
     .all(isAdmin)
-    .post(UpdateTask);
+    .post(UpdateProject);
 
 router.route('/delete')
     .all(isAdmin)
-    .post(DeleteTask);
+    .post(DeleteProject);
 
-module.exports = { TaskRoutes: router };
+module.exports = { ProjectRoutes: router };

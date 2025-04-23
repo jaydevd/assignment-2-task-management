@@ -74,4 +74,35 @@ const UpdateProfile = async (req, res) => {
     }
 }
 
-module.exports = { UpdateProfile }
+const DeleteProfile = async (req, res) => {
+    try {
+        const { id } = req.body;
+
+        if (!id) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
+        const result = await User.update({ isActive: false, isDeleted: true }, { where: { id: id } });
+
+        return res.status(200).json({
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
+            message: '',
+            data: '',
+            error: ''
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
+            message: '',
+            data: '',
+            error: error.message
+        })
+    }
+}
+
+module.exports = { UpdateProfile, DeleteProfile }

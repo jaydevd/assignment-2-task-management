@@ -3,7 +3,7 @@ const path = require('path');
 const hbs = require('nodemailer-express-handlebars').default;
 
 const transporter = nodemailer.createTransport({
-    host: 'bulk.smtp.mailtrap.io',
+    host: 'live.smtp.mailtrap.io',
     port: 587,
     pool: true,
     auth: {

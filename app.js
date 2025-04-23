@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-sequelize.sync({ force: true }).then(() => {
+sequelize.sync().then(() => {
     console.log("Database synced successfully.");
 }).catch((err) => {
     console.error("Error syncing database:", err);

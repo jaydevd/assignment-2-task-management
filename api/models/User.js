@@ -24,6 +24,10 @@ const User = sequelize.define("User", {
         allowNull: false,
         unique: true
     },
+    role: {
+        type: DataTypes.ENUM("employee", "admin"),
+        allowNull: false
+    },
     token: {
         type: DataTypes.STRING(200),
         allowNull: true,
@@ -41,10 +45,5 @@ const User = sequelize.define("User", {
         timestamps: false
     }
 );
-User.sync({ force: true }).then(() => {
-    console.log("User table synced successfully.");
-}).catch((err) => {
-    console.error("Error syncing User table:", err);
-});
 
 module.exports = { User };

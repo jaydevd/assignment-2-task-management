@@ -52,8 +52,6 @@ const SignUp = async (req, res) => {
             isDeleted: false
         });
 
-        startCronJobs(transporter, email, { });
-
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             data: result.id,
