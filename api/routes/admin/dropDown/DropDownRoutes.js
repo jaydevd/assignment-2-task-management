@@ -8,18 +8,9 @@
 
 const express = require('express');
 const router = express.Router();
-const { GetCountries, GetCategories, GetCities, GetSubCategories } = require('./../../../controllers/user/DropdownController');
+const { GetUsers } = require('./../../../controllers/admin/DropDownController');
 
-router.route('/countries')
-    .get(GetCountries);
-
-router.route('/categories')
-    .get(GetCategories);
-
-router.route('/sub-categories')
-    .get(GetSubCategories);
-
-router.route('/cities')
-    .get(GetCities);
+router.route('/users')
+    .get(GetUsers);
 
 module.exports = { DropDownRoutes: router };

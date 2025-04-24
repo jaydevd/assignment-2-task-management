@@ -37,7 +37,7 @@ const UpdateProfile = async (req, res) => {
 
         if (!verifyID) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: 'id not found',
                 data: '',
                 error: ''
@@ -46,17 +46,12 @@ const UpdateProfile = async (req, res) => {
 
         const result = await User.update({
             name,
-            gender,
-            age,
-            country,
-            city,
-            company,
             updatedAt: Math.floor(Date.noe() / 1000),
             updatedBy: id
         }, { where: { id: id } });
 
         return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
             data: result.id,
             message: 'Data Created Successfully',
             error: ''
@@ -66,7 +61,7 @@ const UpdateProfile = async (req, res) => {
         console.log(error);
 
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             data: '',
             message: '',
             error: error.message

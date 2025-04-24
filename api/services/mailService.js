@@ -7,7 +7,7 @@ const mailService = (user, context) => {
         to: `${user.name} ${user.email}`,
         subject: 'Test mail',
         template: 'index',
-        context: { context }
+        context: context
     })
 }
 

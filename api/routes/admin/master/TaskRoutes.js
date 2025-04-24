@@ -20,7 +20,7 @@ const router = express.Router();
 
 router.route('/list')
     .all(isAdmin)
-    .post(ListTasks);
+    .get(ListTasks);
 
 router.route('/assign')
     .all(isAdmin)

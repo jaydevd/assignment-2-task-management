@@ -12,7 +12,7 @@ const { isUser } = require('./../../../middleware/isUser');
 const { cache } = require('../../../middleware/cache');
 const router = express.Router();
 
-router.route('/tasks')
+router.route('/list')
     .all(isUser, cache)
     .get(ListTasks);
 

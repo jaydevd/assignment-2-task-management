@@ -6,7 +6,7 @@ const cache = async (req, res, next) => {
     try {
         const user = await client.get('user');
         const tasks = await client.get('tasks');
-        console.log(user);
+        // console.log(user);
         console.log(tasks);
 
         if (!user) {

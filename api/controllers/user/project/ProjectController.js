@@ -12,41 +12,65 @@ const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { User } = require('./../../../models/index');
+const { Task } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 const { Sequelize, Op } = require('sequelize');
 const { VALIDATION_RULES } = require('../../../config/validations');
+const admin = require('firebase-admin');
+const client = require('../../../config/redis');
 
-const SendMail = async (req, res) => {
+const ListProjects = async (req, res) => {
     try {
+        const user = req.user;
+        const id = user.id;
+        console.log(user, id);
+        const { query, page } = req.query;
 
-        const users = await User.findAll({ attributes: ['name', 'email'] }, { where: { role: admin } });
-        const query = `
-        SELECT u.id AS user_id, u.name AS user_name, u.role, t.id AS task_id, t.title AS task_title, t.projectId
-        FROM users u
-        JOIN tasks t ON u.id = t.userId
-        JOIN projects p ON t.projectId = p.id
-        WHERE u.role = 'employee' AND
-        u.id = ANY(p.members);
-        `;
-        const [mailContent, metadata] = await sequelize.query(query);
+        const limit = 2;
+        const skip = Number(page - 1) * limit;
 
-        if (!mailContent) {
+        const validationObj = { id };
+        const validation = new Validator(validationObj, {
+            id: VALIDATION_RULES.USER.id
+        });
+
+        if (validation.fails()) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'No users found',
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
+
+        const rawQuery = `
+        SELECT p.id, p.name
+        FROM projects p
+        WHERE '${id}' = ANY(p.members) AND p.name ILIKE '%${query || ''}%'
+        LIMIT ${limit || 10} OFFSET ${skip || 0}
+        `;
+
+        const [projects, metadata] = await sequelize.query(rawQuery);
+
+        if (!projects) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'tasks not found',
                 data: '',
                 error: ''
             })
         }
 
+        client.set('projects', JSON.stringify(projects));
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: '',
+            data: projects,
             error: ''
         })
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -58,4 +82,6 @@ const SendMail = async (req, res) => {
     }
 }
 
-module.exports = { SendMail }
+module.exports = {
+    ListProjects
+}

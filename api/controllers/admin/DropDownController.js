@@ -12,30 +12,30 @@ const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { Category } = require('../../models/Category');
+const { User } = require('../../models');
 const { HTTP_STATUS_CODES } = require('../../config/constants');
 const { sequelize } = require('./../../config/database');
-const { VALIDATION_RULES } = require('../../models/validations');
 
-const GetCountries = async (req, res) => {
+const GetUsers = async (req, res) => {
     try {
-        const query = `SELECT id, name FROM countries;`;
-        const [countries, metadata] = await sequelize.query(query);
 
-        if (!countries) {
+        const query = `SELECT id, name FROM users;`;
+        const [users, metadata] = await sequelize.query(query);
+
+        if (!users) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR,
                 message: '',
                 data: '',
                 error: ''
-            })
+            });
         }
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS,
             message: '',
-            data: countries,
+            data: users,
             error: ''
-        })
+        });
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -48,121 +48,6 @@ const GetCountries = async (req, res) => {
     }
 }
 
-const GetCategories = async (req, res) => {
-    try {
-
-        const query = `SELECT id, name FROM categories;`;
-        const [categories, metadata] = await sequelize.query(query);
-
-        if (!categories) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
-            data: categories,
-            error: ''
-        })
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        })
-
-    }
-}
-
-const GetCities = async (req, res) => {
-    try {
-
-        const { country } = req.body;
-        const validatorObj = req.body;
-        const validation = new Validator(validatorObj, { country: VALIDATION_RULES.COUNTRY.id });
-
-        const query = `SELECT cities FROM countries WHERE country = ${country};`;
-        const [cities, metadata] = await sequelize.query(query);
-
-        if (!cities) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
-            data: '',
-            error: ''
-        })
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        })
-    }
-}
-
-const GetSubCategories = async (req, res) => {
-    try {
-
-        const { category } = req.body;
-        const validatorObj = req.body;
-
-        const validation = new Validator(validatorObj, { category: VALIDATION_RULES.CATEGORY.id });
-        if (validation.fails()) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
-                message: 'Validation failed',
-                data: '',
-                error: validation.errors.all()
-            })
-        }
-
-        const query = `SELECT cities FROM categories WHERE category = ${category};`;
-        const [subCategories, metadata] = await sequelize.query(query);
-
-        if (!subCategories) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
-                message: 'No sub categories found',
-                data: '',
-                error: ''
-            })
-        }
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
-            message: '',
-            data: '',
-            error: ''
-        })
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        })
-    }
-}
 module.exports = {
-    GetCountries,
-    GetCategories,
-    GetCities,
-    GetSubCategories
+    GetUsers
 }

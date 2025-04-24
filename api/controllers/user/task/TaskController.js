@@ -25,7 +25,7 @@ const ListTasks = async (req, res) => {
         const user = req.user;
         const id = user[0].id;
         console.log(user, id);
-        const { page } = req.body;
+        const { query, dueDate, page, projectId, userId, status } = req.query;
 
         const limit = 2;
         const skip = Number(page - 1) * limit;
@@ -56,7 +56,19 @@ const ListTasks = async (req, res) => {
             })
         }
 
-        const tasks = await Task.findAll({ attributes: ['id', 'description', 'status', 'dueDate', 'userId', 'isActive'], where: { userId: id, isActive: true } });
+        const rawQuery = `
+        SELECT t.id, t.description, t.comments, t.status, t.user_id, t.created_at, u.name, p.name
+        FROM tasks t
+        JOIN users u
+        ON t.user_id = u.id
+        JOIN projects p
+        ON t.project_id = p.id
+        WHERE t.is_active = true AND t.description ILIKE '%${query || ''}%' AND t.due_date ILIKE '%${dueDate || ''}%' AND
+        t.status ILIKE '%${status || ''}%' AND t.project_id ILIKE '%${projectId || ''}%' AND t.user_id ILIKE '%${userId || ''}%'
+        LIMIT ${limit || 10} OFFSET ${skip || 0}
+        `;
+
+        const [tasks, metadata] = await sequelize.query(rawQuery);
 
         if (!tasks) {
             return res.status(400).json({
@@ -90,12 +102,16 @@ const ListTasks = async (req, res) => {
 const Comment = async (req, res) => {
     try {
 
-        const { taskID, comment, from, to } = req.body;
+        const { taskID, comment } = req.body;
+        const user = req.user;
+        const userID = user.id;
         const id = uuidv4();
+
+        console.log("\nComment API: ", taskID, comment, userID, '\n');
 
         const rawQuery = `
         UPDATE tasks
-        SET comments = comments || '[{"id": '${id}', "comment":'${comment}', "from":'${from}', "to": '${to}'}]'::jsonb
+        SET comments = comments || '[{"id": "${id}", "comment":"${comment}", "from":"${userID}"}]'::jsonb
         WHERE id = '${taskID}'
         `;
         const [result, metadata] = await sequelize.query(rawQuery);
@@ -111,7 +127,7 @@ const Comment = async (req, res) => {
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
-            message: '',
+            message: 'comment saved',
             data: '',
             error: ''
         });

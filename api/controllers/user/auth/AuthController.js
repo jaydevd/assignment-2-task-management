@@ -24,7 +24,7 @@ const { transporter } = require('../../../config/transporter');
 const SignUp = async (req, res) => {
 
     try {
-        const { name, email, password } = req.body;
+        const { name, email, role, password } = req.body;
 
         const validationObj = req.body;
         let validation = new Validator(validationObj, VALIDATION_RULES.USER);
@@ -45,6 +45,7 @@ const SignUp = async (req, res) => {
             id,
             name,
             email,
+            role,
             password: hashedPassword,
             createdBy: id,
             createdAt: Math.floor(Date.now() / 1000),
@@ -52,10 +53,30 @@ const SignUp = async (req, res) => {
             isDeleted: false
         });
 
+        const token = jwt.sign({ id: id }, process.env.SECRET_KEY, { expiresIn: '1h' });
+
+        const response = await User.update(
+            { token: token },
+            {
+                where: {
+                    id: id,
+                },
+            },
+        );
+
+        if (!response) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'Unable to store token',
+                data: '',
+                error: ''
+            });
+        }
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
-            data: result.id,
-            message: 'Sign up Successful',
+            data: token,
+            message: 'Sign up successful',
             error: ''
         });
 
@@ -63,7 +84,7 @@ const SignUp = async (req, res) => {
         console.log(error);
 
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             data: '',
             message: '',
             error: error.message

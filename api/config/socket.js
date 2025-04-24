@@ -1,12 +1,11 @@
 const admin = require('firebase-admin');
 const users = new Map();
 
-admin.initializeApp({
-    credential: admin.credential.cert(require('./../../service-account.json'))
-});
-
 module.exports = async (io) => {
     try {
+        admin.initializeApp({
+            credential: admin.credential.cert(require('./../../service-account.json'))
+        });
         io.on('connection', (socket) => {
 
             // Listen for user joining
@@ -16,42 +15,24 @@ module.exports = async (io) => {
                 console.log(`User ${userId} registered with socket ID ${socket.id}`);
             });
 
-            // Listen for comments
-            socket.on('comment', ({ to, comment, fcmToken }) => {
-                console.log("comment received", to, comment);
+            socket.on('update_task', ({ to, updateTask, fcmToken }) => {
+                const targetSocketId = users.get(to);
                 const payload = {
                     notification: {
                         title: 'Task Management System',
-                        body: { comment, from, to },
+                        body: "Task Updated",
                     },
                     token: fcmToken,
                 };
-
-                admin.messaging().send(payload);
-                const targetSocketId = users.get(to);
-                if (targetSocketId) {
-                    io.to(targetSocketId).emit('comment', {
-                        from: socket.id,
-                        comment,
-                    });
+                const sendMessage = async () => {
+                    await admin.messaging().send(payload);
                 }
-            });
+                sendMessage();
 
-            socket.on('update_task', ({ to, task, fcmToken }) => {
-                const targetSocketId = users.get(to);
-                const payload = {
-                    notification: {
-                        title: 'Task Management System',
-                        body: { comment, from, to },
-                    },
-                    token: fcmToken,
-                };
-
-                admin.messaging().send(payload);
                 if (targetSocketId) {
                     io.to(targetSocketId).emit('update_task', {
                         from: socket.id,
-                        task,
+                        updateTask,
                     });
                 }
             });

@@ -72,7 +72,7 @@ const isUser = async (req, res, next) => {
         }
 
         req.user = user;
-        console.log("authentication done");
+        console.log("user authentication done.");
         next();
     }
     catch (error) {

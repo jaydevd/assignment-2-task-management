@@ -12,7 +12,7 @@ const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { User, Task, Project } = require('../../../models/index');
+const { User, Task, Project } = require('../../../models');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { Sequelize, Op } = require('sequelize');
@@ -55,15 +55,18 @@ const CreateProject = async (req, res) => {
         const { name, members } = req.body;
         const admin = req.admin;
         const adminID = admin.id;
+        const formattedMembers = `'{${members.map(m => `"${m}"`).join(',')}}'`;
+        // const date = new Date(Math.floor(Date.now() / 1000) * 1000);
+        const date = new Date().toISOString(); // outputs in UTC in ISO format
 
         const id = uuidv4();
 
         const query = `
         INSERT INTO projects (id, name, members, created_by, created_at, is_active, is_deleted)
         VALUES
-            ('${id}', '${name}', '{${members}}', '${adminID}', '${new Date()}', true, false)
+            ('${id}', '${name}', ${formattedMembers}, '${adminID}', '${date}', true, false)
         ;
-        `;
+    `;
 
         const [result, metadata] = await sequelize.query(query);
 
