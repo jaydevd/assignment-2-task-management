@@ -93,7 +93,7 @@ const LogIn = async (req, res) => {
 
 const LogOut = async (req, res) => {
     try {
-        const reqAdmin = req.body.admin;
+        const reqAdmin = req.admin;
         const token = reqAdmin.token;
 
         if (!token) {
@@ -141,8 +141,6 @@ const LogOut = async (req, res) => {
                 error: ''
             })
         }
-
-        client.quit();
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

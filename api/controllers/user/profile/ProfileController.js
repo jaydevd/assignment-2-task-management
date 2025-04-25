@@ -7,6 +7,7 @@
  * @description This file will contain all the methods of project.
  * @author Jaydev Dwivedi (Zignuts)
  */
+
 const { User } = require('./../../../models/index');
 const Validator = require('validatorjs');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');

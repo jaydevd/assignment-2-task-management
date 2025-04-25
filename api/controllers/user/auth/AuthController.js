@@ -15,7 +15,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { VALIDATION_RULES } = require('../../../config/validations');
-const client = require('../../../config/redis');
 const { sequelize } = require('../../../config/database');
 
 const SignUp = async (req, res) => {
@@ -148,27 +147,6 @@ const LogIn = async (req, res) => {
             });
         }
 
-        const taskQuery = `
-        SELECT t.id, t.description, t.status, t.comments, t.due_date, t.user_id, u.name FROM tasks t
-        JOIN users u
-        ON t.user_id = u.id
-        WHERE u.id = '${user[0].id}'
-        `;
-
-        const [tasks, meta] = await sequelize.query(taskQuery);
-
-        if (!tasks) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: "tasks not found",
-                data: "",
-                error: ""
-            });
-        }
-
-        client.set('user', JSON.stringify(user));
-        client.set('tasks', JSON.stringify(tasks));
-
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             data: { user, token },
@@ -229,14 +207,12 @@ const LogOut = async (req, res) => {
             })
         }
 
-        client.quit();
-
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'Logged out successfully',
             data: '',
             error: ''
-        })
+        });
 
     } catch (error) {
         console.log(error);

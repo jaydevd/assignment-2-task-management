@@ -18,14 +18,18 @@ const client = require('../../../config/redis');
 
 const ListProjects = async (req, res) => {
     try {
-        const { page } = req.query;
+        const { page, query } = req.query;
         const limit = 10;
         const skip = Number(page - 1) * limit;
+        const end = skip + limit - 1;
 
+        // console.log("waiting for projects to be fetched.");
+        await client.del('projects');
         const cachedProjects = await client.zRange('projects', skip, end);
+        console.log(typeof cachedProjects);
 
-        if (cachedProjects) {
-
+        if (Object.keys(cachedProjects).length != 0) {
+            console.log("projects found!");
             let projects = await Promise.all(
                 cachedProjects.map(project => client.hGetAll(project.id))
             );
@@ -40,6 +44,7 @@ const ListProjects = async (req, res) => {
                 error: ''
             })
         }
+        console.log("No cached projects");
 
         const projects = await Project.findAll({ attributes: ['id', 'name', 'members'] }, { limit: limit, offset: skip });
 
@@ -53,14 +58,19 @@ const ListProjects = async (req, res) => {
         }
 
         await Promise.all(
-            projects.map(project =>
-                client.hSet(`project:${project.id}`, project)
-            )
+            projects.map(project => {
+                return client.hSet(`project:${project.id}`, {
+                    id: String(project.id),
+                    name: project.name,
+                    members: project.members.toString()
+                });
+            })
         );
 
+
         await client.zAdd('projects', projects.map(project => ({
-            score: project.id,
-            value: `project:${project.id}`,
+            score: Number(project.createdAt || Date.now()),
+            value: `project:${project.id}`
         })));
 
         return res.status(200).json({

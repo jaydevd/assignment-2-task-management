@@ -18,7 +18,7 @@ const isAdmin = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    console.log("token from isAdminAuthenticated: ", token);
+    console.log("token from isAdmin: ", token);
 
     if (!token) {
       return res.status(400).json({
