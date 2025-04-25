@@ -6,8 +6,8 @@
  * @author Jaydev Dwivedi (Zignuts)
  */
 
-const { name } = require('ejs');
 const { STATUS } = require('./constants');
+
 const VALIDATION_RULES = {
     USER: {
         id: "string|max:60",

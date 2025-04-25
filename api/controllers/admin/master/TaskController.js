@@ -151,6 +151,11 @@ const AssignTask = async (req, res) => {
             })
         }
 
+        await client.zAdd('tasks', {
+            score: id,
+            value: `task:${id}`,
+        });
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'task saved',
@@ -258,17 +263,10 @@ const UpdateTask = async (req, res) => {
             });
         }
 
-        const query = `
-        SELECT t.id, t.description, t.comments, t.status, t.user_id, t.due_date, t.created_at, u.name as user, p.name as project
-        FROM tasks t
-        JOIN users u
-        ON t.user_id = u.id
-        JOIN projects p
-        ON t.project_id = p.id
-        WHERE t.is_active = true
-        `
-        const tasks = await sequelize.query(query);
-        client.set('tasks', JSON.stringify(tasks));
+        await client.zAdd('tasks', {
+            score: id,
+            value: `task:${id}`,
+        });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -302,6 +300,8 @@ const DeleteTask = async (req, res) => {
                 error: ''
             });
         }
+
+        await client.zRem('tasks', `task:${id}`);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

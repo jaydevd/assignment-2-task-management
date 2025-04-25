@@ -72,26 +72,6 @@ const UpdateUser = async (req, res) => {
     try {
         const { id, name } = req.body;
 
-        const cachedUsers = await client.zRange('users', skip, end);
-
-        if (cachedUsers) {
-
-            let users = await Promise.all(
-                cachedUsers.map(task => client.hGetAll(task.id))
-            );
-
-            if (query) {
-                users = users.filter(task => task.description == query || task.due_date == query);
-            }
-
-            return res.status(200).json({
-                status: HTTP_STATUS_CODES.SUCCESS.OK,
-                message: '',
-                data: users,
-                error: ''
-            });
-        }
-
         const validationObj = req.body;
         const validation = new Validator(validationObj, {
             id: VALIDATION_RULES.USER.id,
@@ -129,9 +109,10 @@ const UpdateUser = async (req, res) => {
             });
         }
 
-        const users = await User.findAll({ attributes: ['id', 'name', 'role', 'email'] });
-        client.del('users');
-        client.set('users', JSON.stringify(users));
+        await client.zAdd('users', {
+            score: id,
+            value: `user:${id}`,
+        });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -183,6 +164,8 @@ const DeleteUser = async (req, res) => {
                 error: ''
             });
         }
+
+        await client.zRem('users', `user:${id}`);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

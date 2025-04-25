@@ -14,6 +14,7 @@ const { Project } = require('../../../models');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
+const client = require('../../../config/redis');
 
 const ListProjects = async (req, res) => {
     try {
@@ -122,6 +123,11 @@ const CreateProject = async (req, res) => {
             })
         }
 
+        await client.zAdd('projects', {
+            score: id,
+            value: `project:${id}`,
+        });
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'project saved',
@@ -178,7 +184,7 @@ const UpdateProject = async (req, res) => {
 
         await client.zRem('projects', `project:${id}`);
         await client.zAdd('projects', {
-            score: updatedTimestamp,
+            score: id,
             value: `project:${id}`
         });
 
@@ -232,6 +238,8 @@ const DeleteProject = async (req, res) => {
                 error: ''
             })
         }
+
+        await client.zRem('projects', `project:${id}`);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

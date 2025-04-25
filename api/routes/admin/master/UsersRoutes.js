@@ -9,12 +9,11 @@
 const express = require('express');
 const { isAdmin } = require('../../../middleware/isAdmin');
 const { ListUsers, UpdateUser, DeleteUser } = require('./../../../controllers/admin/master/UsersController');
-const { cache } = require('../../../middleware/cache');
 
 const router = express.Router();
 
 router.route('/list')
-    .all(cache, isAdmin)
+    .all(isAdmin)
     .get(ListUsers);
 
 router.route('/update-user')

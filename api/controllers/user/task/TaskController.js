@@ -205,8 +205,10 @@ const UpdateTask = async (req, res) => {
             })
         }
 
-        client.del('tasks');
-        client.set('tasks', JSON.stringify(tasks));
+        await client.zAdd('tasks', {
+            score: id,
+            value: `task:${id}`,
+        });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

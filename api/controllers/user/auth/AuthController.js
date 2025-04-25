@@ -229,6 +229,8 @@ const LogOut = async (req, res) => {
             })
         }
 
+        client.quit();
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'Logged out successfully',

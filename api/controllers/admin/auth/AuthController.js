@@ -14,6 +14,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { VALIDATION_RULES } = require('../../../config/validations');
+const client = require("../../../config/redis");
 
 const LogIn = async (req, res) => {
     try {
@@ -140,6 +141,8 @@ const LogOut = async (req, res) => {
                 error: ''
             })
         }
+
+        client.quit();
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

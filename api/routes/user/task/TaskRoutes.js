@@ -9,11 +9,10 @@
 const express = require('express');
 const { ListTasks, UpdateTask, Comment } = require('./../../../controllers/user/task/TaskController');
 const { isUser } = require('./../../../middleware/isUser');
-const { cache } = require('../../../middleware/cache');
 const router = express.Router();
 
 router.route('/list')
-    .all(isUser, cache)
+    .all(isUser)
     .get(ListTasks);
 
 router.route('/comment')
