@@ -26,16 +26,24 @@ const ListTasks = async (req, res) => {
         const limit = 2;
         const skip = Number(page - 1) * limit;
 
-        const cacheTasks = req.tasks;
-        console.log(cacheTasks);
+        const cachedTasks = await client.zRange('tasks', skip, end);
 
-        if (cacheTasks) {
+        if (cachedTasks) {
+
+            let tasks = await Promise.all(
+                cachedTasks.map(task => client.hGetAll(task.id))
+            );
+
+            if (query) {
+                tasks = tasks.filter(task => task.description == query || task.due_date == query);
+            }
+
             return res.status(200).json({
                 status: HTTP_STATUS_CODES.SUCCESS.OK,
                 message: '',
-                data: cacheTasks,
+                data: tasks,
                 error: ''
-            })
+            });
         }
 
         const validationObj = { id };
@@ -53,7 +61,7 @@ const ListTasks = async (req, res) => {
         }
 
         const rawQuery = `
-        SELECT t.id, t.description, t.comments, t.status, t.user_id, t.created_at, u.name, p.name
+        SELECT t.id, t.description, t.comments, t.status, t.due_date, t.user_id, t.created_at, u.name, p.name
         FROM tasks t
         JOIN users u
         ON t.user_id = u.id
@@ -75,14 +83,23 @@ const ListTasks = async (req, res) => {
             })
         }
 
-        client.set('tasks', JSON.stringify(tasks));
+        await Promise.all(
+            tasks.map(task =>
+                client.hSet(`task:${task.id}`, task)
+            )
+        );
+
+        await client.zAdd('tasks', tasks.map(task => ({
+            score: task.id,
+            value: `task:${task.id}`,
+        })));
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
             data: tasks,
             error: ''
-        })
+        });
 
     } catch (error) {
         console.log(error);
@@ -98,15 +115,28 @@ const ListTasks = async (req, res) => {
 const Comment = async (req, res) => {
     try {
 
-        const { taskID, comment } = req.body;
+        const { taskId, comment } = req.body;
         const user = req.user;
-        const userID = user.id;
+        const userId = user.id;
+
+        const validationObj = { taskId, comment, from: userId };
+        const validation = new Validator(validationObj, VALIDATION_RULES.COMMENT);
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
+
         const id = uuidv4();
 
         const rawQuery = `
         UPDATE tasks
-        SET comments = comments || '[{"id": "${id}", "comment":"${comment}", "from":"${userID}"}]'::jsonb
-        WHERE id = '${taskID}'
+        SET comments = comments || '[{"id": "${id}", "comment":"${comment}", "from":"${userId}"}]'::jsonb
+        WHERE id = '${taskId}'
         `;
         const [result, metadata] = await sequelize.query(rawQuery);
 
@@ -139,17 +169,44 @@ const Comment = async (req, res) => {
 
 const UpdateTask = async (req, res) => {
     try {
+
         const { id, description, status, comments, dueDate } = req.body;
-        const result = await Task.update({ status, description, comments, dueDate }, { where: { id: id } });
+
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: ''
+            })
+        }
+        const result = await Task.update({ status, description, comments, dueDate }, { where: { id } });
 
         if (!result) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.FORBIDDEN,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: '',
                 data: '',
                 error: ''
             })
         }
+
+        const tasks = await Task.findAll({ attributes: ['id', 'status', 'description', 'projectId', 'userId', 'dueDate'], where: { isActive: true } });
+
+        if (!tasks) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'tasks not found',
+                data: '',
+                error: ''
+            })
+        }
+
+        client.del('tasks');
+        client.set('tasks', JSON.stringify(tasks));
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

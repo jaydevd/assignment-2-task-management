@@ -14,22 +14,13 @@ const client = require("../config/redis");
 const cache = async (req, res, next) => {
 
     try {
-        // const user = await client.get('user');
-        // const tasks = await client.get('tasks');
-        // console.log(user);
-        console.log(tasks);
-
-        if (!user) {
-            return res.status(404).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
+        const user = await client.get('user');
+        const tasks = await client.get('tasks');
+        const users = await client.get('users');
 
         req.user = JSON.parse(user);
         req.tasks = JSON.parse(tasks);
+        req.users = JSON.parse(users);
         next();
 
     } catch (err) {

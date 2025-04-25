@@ -25,7 +25,7 @@ const getData = async () => {
 
 const startCronJobs = () => {
 
-    const job = cron.schedule('* * * * *', async () => {
+    const job = cron.schedule('0 20 * * *', async () => {
 
         const { projects, users, tasks } = await getData();
 
@@ -53,7 +53,6 @@ const startCronJobs = () => {
     });
 
     job.start();
-
 };
 
 module.exports = { startCronJobs };

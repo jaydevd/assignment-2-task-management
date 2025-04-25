@@ -32,7 +32,7 @@ const UpdateProfile = async (req, res) => {
             })
         }
 
-        const verifyID = await User.findOne({ attributes: ['id'], where: { id: id } });
+        const verifyID = await User.findOne({ attributes: ['id'], where: { id } });
 
         if (!verifyID) {
             return res.status(400).json({
@@ -43,11 +43,13 @@ const UpdateProfile = async (req, res) => {
             })
         }
 
+        const updatedAt = new Date(Math.floor(Date.now() / 1000));
+
         const result = await User.update({
             name,
-            updatedAt: new Date(Math.floor(Date.now() / 1000)),
+            updatedAt,
             updatedBy: id
-        }, { where: { id: id } });
+        }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -81,7 +83,7 @@ const DeleteProfile = async (req, res) => {
             })
         }
 
-        const user = await User.findOne({ attributes: ['id'], where: { id: id } });
+        const user = await User.findOne({ attributes: ['id'], where: { id } });
 
         if (!user) {
             return res.status(400).json({
@@ -92,7 +94,7 @@ const DeleteProfile = async (req, res) => {
             })
         }
 
-        const result = await User.update({ isActive: false, isDeleted: true }, { where: { id: id } });
+        const result = await User.update({ isActive: false, isDeleted: true }, { where: { id } });
 
         if (!result) {
             return res.status(400).json({

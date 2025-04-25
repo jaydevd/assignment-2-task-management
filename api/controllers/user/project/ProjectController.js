@@ -24,6 +24,28 @@ const ListProjects = async (req, res) => {
         const limit = 2;
         const skip = Number(page - 1) * limit;
 
+        const start = skip;
+        const end = start + limit - 1;
+
+        const cachedProjects = await client.zRange('projects', start, end);
+
+        if (cachedProjects) {
+
+            let projects = await Promise.all(
+                ids.map(id => client.hGetAll(id))
+            );
+
+            if (query) {
+                projects = projects.filter(project => project.name == query);
+            }
+            return res.status(200).json({
+                status: HTTP_STATUS_CODES.SUCCESS.OK,
+                message: '',
+                data: projects,
+                error: ''
+            })
+        }
+
         const validationObj = { id };
         const validation = new Validator(validationObj, {
             id: VALIDATION_RULES.USER.id
@@ -56,7 +78,16 @@ const ListProjects = async (req, res) => {
             })
         }
 
-        client.set('projects', JSON.stringify(projects));
+        await Promise.all(
+            projects.map(project =>
+                client.hSet(`project:${project.id}`, project)
+            )
+        );
+
+        await client.zAdd('projects', projects.map(project => ({
+            score: project.id,
+            value: `user:${project.id}`,
+        })));
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

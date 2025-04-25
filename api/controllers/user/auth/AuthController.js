@@ -37,6 +37,7 @@ const SignUp = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const id = uuidv4();
+        const createdAt = new Date(Math.floor(Date.now() / 1000) * 1000);
 
         const result = await User.create({
             id,
@@ -45,21 +46,23 @@ const SignUp = async (req, res) => {
             role,
             password: hashedPassword,
             createdBy: id,
-            createdAt: Math.floor(Date.now() / 1000),
+            createdAt,
             isActive: true,
             isDeleted: false
         });
 
-        const token = jwt.sign({ id: id }, process.env.SECRET_KEY, { expiresIn: '1h' });
+        if (!result) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'unable to create user',
+                data: '',
+                error: ''
+            });
+        }
 
-        const response = await User.update(
-            { token: token },
-            {
-                where: {
-                    id: id,
-                },
-            },
-        );
+        const token = jwt.sign({ id }, process.env.SECRET_KEY, { expiresIn: '1h' });
+
+        const response = await User.update({ token }, { where: { id } });
 
         if (!response) {
             return res.status(400).json({
@@ -134,14 +137,7 @@ const LogIn = async (req, res) => {
 
         const token = jwt.sign({ id: user[0].id }, secretKey, { expiresIn: '1h' });
 
-        const result = await User.update(
-            { token: token },
-            {
-                where: {
-                    id: user[0].id,
-                },
-            },
-        );
+        const result = await User.update({ token }, { where: { id: user[0].id } });
 
         if (!result) {
             return res.status(400).json({
@@ -209,7 +205,7 @@ const LogOut = async (req, res) => {
         }
 
         const user = await User.findOne({
-            where: { token: token },
+            where: { token },
             attributes: ['id', 'token']
         });
 

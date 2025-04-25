@@ -13,13 +13,23 @@ const { User } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
+const client = require("../../../config/redis");
 
 const ListUsers = async (req, res) => {
     try {
         const { query, page } = req.query;
         const limit = 2;
         const skip = Number(page - 1) * limit;
+        const cachedUsers = req.users;
 
+        if (cachedUsers) {
+            return res.status(200).json({
+                status: HTTP_STATUS_CODES.SUCCESS.OK,
+                message: '',
+                data: cachedUsers,
+                error: ''
+            })
+        }
         const rawQuery = `
         SELECT u.id, u.name, u.email
         FROM users u
@@ -37,6 +47,8 @@ const ListUsers = async (req, res) => {
                 error: ''
             });
         }
+
+        client.set(JSON.stringify(users));
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -60,6 +72,26 @@ const UpdateUser = async (req, res) => {
     try {
         const { id, name } = req.body;
 
+        const cachedUsers = await client.zRange('users', skip, end);
+
+        if (cachedUsers) {
+
+            let users = await Promise.all(
+                cachedUsers.map(task => client.hGetAll(task.id))
+            );
+
+            if (query) {
+                users = users.filter(task => task.description == query || task.due_date == query);
+            }
+
+            return res.status(200).json({
+                status: HTTP_STATUS_CODES.SUCCESS.OK,
+                message: '',
+                data: users,
+                error: ''
+            });
+        }
+
         const validationObj = req.body;
         const validation = new Validator(validationObj, {
             id: VALIDATION_RULES.USER.id,
@@ -75,7 +107,7 @@ const UpdateUser = async (req, res) => {
             })
         }
 
-        const user = await User.findOne({ attributes: ['id'], where: { id: id } });
+        const user = await User.findOne({ attributes: ['id'], where: { id } });
 
         if (!user) {
             return res.status(400).json({
@@ -86,11 +118,7 @@ const UpdateUser = async (req, res) => {
             });
         }
 
-        const result = await User.update({
-            name: name
-        }, {
-            where: { id: id }
-        })
+        const result = await User.update({ name }, { where: { id } });
 
         if (!result) {
             return res.status(400).json({
@@ -100,12 +128,18 @@ const UpdateUser = async (req, res) => {
                 error: ''
             });
         }
+
+        const users = await User.findAll({ attributes: ['id', 'name', 'role', 'email'] });
+        client.del('users');
+        client.set('users', JSON.stringify(users));
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'user updated',
             data: result,
             error: ''
         });
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -113,7 +147,7 @@ const UpdateUser = async (req, res) => {
             message: '',
             data: '',
             error: error.message
-        })
+        });
     }
 }
 
@@ -129,7 +163,7 @@ const DeleteUser = async (req, res) => {
                 error: ''
             })
         }
-        const user = await User.findOne({ attributes: ['id'], where: { id: id } });
+        const user = await User.findOne({ attributes: ['id'], where: { id } });
 
         if (!user) {
             return res.status(400).json({
@@ -139,7 +173,7 @@ const DeleteUser = async (req, res) => {
                 error: ''
             });
         }
-        const result = await User.update({ isActive: false, isDeleted: true }, { where: { id: id } });
+        const result = await User.update({ isActive: false, isDeleted: true }, { where: { id } });
 
         if (!result) {
             return res.status(400).json({

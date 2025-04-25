@@ -23,6 +23,26 @@ const ListTasks = async (req, res) => {
         const limit = 2;
         const skip = Number(page - 1) * limit;
 
+        const cachedTasks = await client.zRange('tasks', skip, end);
+
+        if (cachedTasks) {
+
+            let tasks = await Promise.all(
+                cachedTasks.map(task => client.hGetAll(task.id))
+            );
+
+            if (query) {
+                tasks = tasks.filter(task => task.description == query || task.due_date == query);
+            }
+
+            return res.status(200).json({
+                status: HTTP_STATUS_CODES.SUCCESS.OK,
+                message: '',
+                data: tasks,
+                error: ''
+            });
+        }
+
         const validationObj = { dueDate, projectId, userId, status };
         const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
 
@@ -57,6 +77,17 @@ const ListTasks = async (req, res) => {
             })
         }
 
+        await Promise.all(
+            tasks.map(task =>
+                client.hSet(`task:${task.id}`, task)
+            )
+        );
+
+        await client.zAdd('tasks', tasks.map(task => ({
+            score: task.id,
+            value: `task:${task.id}`,
+        })));
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
@@ -78,7 +109,7 @@ const ListTasks = async (req, res) => {
 const AssignTask = async (req, res) => {
     try {
         const admin = req.admin;
-        const adminID = admin.id;
+        const createdBy = admin.id;
 
         const { userId, description, dueDate, status, comments, projectId } = req.body;
 
@@ -106,7 +137,7 @@ const AssignTask = async (req, res) => {
             projectId,
             comments: comments || null,
             createdAt,
-            createdBy: adminID,
+            createdBy,
             isActive: true,
             isDeleted: false
         });
@@ -122,7 +153,7 @@ const AssignTask = async (req, res) => {
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
-            message: 'data inserted',
+            message: 'task saved',
             data: result.id,
             error: ''
         });
@@ -209,11 +240,11 @@ const UpdateTask = async (req, res) => {
         }
 
         const date = new Date(dueDate);
-        const isoString = date.toISOString();
+        const dueDateISO = date.toISOString();
 
         const rawQuery = `
         UPDATE tasks
-        SET status = '${status}', description = '${description}', due_date = '${isoString}'
+        SET status = '${status}', description = '${description}', due_date = '${dueDateISO}'
         WHERE id = '${id}';
         `;
         const result = await sequelize.query(rawQuery);
@@ -261,8 +292,7 @@ const DeleteTask = async (req, res) => {
     try {
 
         const { id } = req.body;
-
-        const result = await Task.update({ isActive: false, isDeleted: true }, { where: { id: id } });
+        const result = await Task.update({ isActive: false, isDeleted: true }, { where: { id } });
 
         if (!result) {
             return res.status(400).json({

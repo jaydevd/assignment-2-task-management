@@ -17,8 +17,30 @@ const { VALIDATION_RULES } = require('../../../config/validations');
 
 const ListProjects = async (req, res) => {
     try {
+        const { page } = req.query;
+        const limit = 10;
+        const skip = Number(page - 1) * limit;
 
-        const projects = await Project.findAll({ attributes: ['id', 'name', 'members'] });
+        const cachedProjects = await client.zRange('projects', skip, end);
+
+        if (cachedProjects) {
+
+            let projects = await Promise.all(
+                cachedProjects.map(project => client.hGetAll(project.id))
+            );
+
+            if (query) {
+                projects = projects.filter(project => project.name == query);
+            }
+            return res.status(200).json({
+                status: HTTP_STATUS_CODES.SUCCESS.OK,
+                message: '',
+                data: projects,
+                error: ''
+            })
+        }
+
+        const projects = await Project.findAll({ attributes: ['id', 'name', 'members'] }, { limit: limit, offset: skip });
 
         if (!projects) {
             return res.status(400).json({
@@ -28,6 +50,17 @@ const ListProjects = async (req, res) => {
                 error: ''
             });
         }
+
+        await Promise.all(
+            projects.map(project =>
+                client.hSet(`project:${project.id}`, project)
+            )
+        );
+
+        await client.zAdd('projects', projects.map(project => ({
+            score: project.id,
+            value: `project:${project.id}`,
+        })));
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -46,6 +79,7 @@ const ListProjects = async (req, res) => {
         })
     }
 }
+
 const CreateProject = async (req, res) => {
     try {
 
@@ -53,8 +87,7 @@ const CreateProject = async (req, res) => {
         const admin = req.admin;
         const adminID = admin.id;
         const formattedMembers = `'{${members.map(m => `"${m}"`).join(',')}}'`;
-        // const date = new Date(Math.floor(Date.now() / 1000) * 1000);
-        const date = new Date().toISOString(); // outputs in UTC in ISO format
+        const date = new Date(Math.floor(Date.now() / 1000 * 1000)).toISOString();
 
         const validationObj = { name, members };
         const validation = new Validator(validationObj, {
@@ -111,7 +144,7 @@ const UpdateProject = async (req, res) => {
     try {
         const { id, name, members } = req.body;
         const admin = req.admin;
-        const adminID = admin.id;
+        const updatedBy = admin.id;
 
         const validationObj = { id, name, members };
         const validation = new Validator(validationObj, {
@@ -129,7 +162,10 @@ const UpdateProject = async (req, res) => {
             })
         }
 
-        const result = await Project.update({ name, members, updatedAt: new Date(), updatedBy: adminID }, { where: { id: id } });
+        const updatedAt = new Date(Math.floor(Date.now() / 1000 * 1000)).toISOString();
+
+        const result = await Project.update({ name, members, updatedAt, updatedBy }, { where: { id } });
+
 
         if (!result) {
             return res.status(400).json({
@@ -139,6 +175,12 @@ const UpdateProject = async (req, res) => {
                 error: ''
             })
         }
+
+        await client.zRem('projects', `project:${id}`);
+        await client.zAdd('projects', {
+            score: updatedTimestamp,
+            value: `project:${id}`
+        });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -162,7 +204,7 @@ const DeleteProject = async (req, res) => {
     try {
         const { id } = req.body;
         const admin = req.admin;
-        const adminID = admin.id;
+        const updatedBy = admin.id;
 
         const validationObj = { id };
         const validation = new Validator(validationObj, {
@@ -178,7 +220,9 @@ const DeleteProject = async (req, res) => {
             })
         }
 
-        const result = await Project.update({ isActive: false, isDeleted: true, updatedAt: new Date(), updatedBy: adminID }, { where: { id: id } });
+        const updatedAt = new Date(Math.floor(Date.now() / 1000 * 1000)).toISOString();
+
+        const result = await Project.update({ isActive: false, isDeleted: true, updatedAt, updatedBy }, { where: { id } });
 
         if (!result) {
             return res.status(400).json({
@@ -207,4 +251,9 @@ const DeleteProject = async (req, res) => {
     }
 }
 
-module.exports = { ListProjects, CreateProject, UpdateProject, DeleteProject }
+module.exports = {
+    ListProjects,
+    CreateProject,
+    UpdateProject,
+    DeleteProject
+}
