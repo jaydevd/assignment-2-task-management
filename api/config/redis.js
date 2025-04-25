@@ -1,3 +1,10 @@
+/**
+ * @name client
+ * @file redis.js
+ * @throwsF
+ * @description This file will configure and connect to redis client.
+ * @author Jaydev Dwivedi (Zignuts)
+*/
 const redis = require('redis');
 
 // Create Redis client

@@ -4,18 +4,15 @@
  * @param {Request} req
  * @param {Response} res
  * @throwsF
- * @description This file will contain Task management APIs.
+ * @description This file will contain Project management methods.
  * @author Jaydev Dwivedi (Zignuts)
  */
 
 const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { User, Task, Project } = require('../../../models');
+const { Project } = require('../../../models');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
-const { Sequelize, Op } = require('sequelize');
 const { VALIDATION_RULES } = require('../../../config/validations');
 
 const ListProjects = async (req, res) => {
@@ -59,6 +56,19 @@ const CreateProject = async (req, res) => {
         // const date = new Date(Math.floor(Date.now() / 1000) * 1000);
         const date = new Date().toISOString(); // outputs in UTC in ISO format
 
+        const validationObj = { name, members };
+        const validation = new Validator(validationObj, {
+            name: VALIDATION_RULES.PROJECT.name,
+            members: VALIDATION_RULES.PROJECT.members
+        });
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
         const id = uuidv4();
 
         const query = `
@@ -103,6 +113,22 @@ const UpdateProject = async (req, res) => {
         const admin = req.admin;
         const adminID = admin.id;
 
+        const validationObj = { id, name, members };
+        const validation = new Validator(validationObj, {
+            id: VALIDATION_RULES.PROJECT.id,
+            name: VALIDATION_RULES.PROJECT.name,
+            members: VALIDATION_RULES.PROJECT.members
+        });
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
+
         const result = await Project.update({ name, members, updatedAt: new Date(), updatedBy: adminID }, { where: { id: id } });
 
         if (!result) {
@@ -137,6 +163,20 @@ const DeleteProject = async (req, res) => {
         const { id } = req.body;
         const admin = req.admin;
         const adminID = admin.id;
+
+        const validationObj = { id };
+        const validation = new Validator(validationObj, {
+            id: VALIDATION_RULES.ADMIN.id
+        })
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validaiton failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
 
         const result = await Project.update({ isActive: false, isDeleted: true, updatedAt: new Date(), updatedBy: adminID }, { where: { id: id } });
 

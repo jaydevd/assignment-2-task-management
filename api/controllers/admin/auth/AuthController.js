@@ -13,7 +13,6 @@ const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
-const { Sequelize, Op } = require('sequelize');
 const { VALIDATION_RULES } = require('../../../config/validations');
 
 const LogIn = async (req, res) => {
@@ -34,8 +33,6 @@ const LogIn = async (req, res) => {
                 error: validation.errors.all()
             })
         }
-
-        console.log("Validation passed");
 
         const admin = await Admin.findOne({
             where: { email: email },
@@ -75,8 +72,6 @@ const LogIn = async (req, res) => {
             },
         );
 
-        console.log("Token stored");
-
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             data: token,
@@ -102,7 +97,7 @@ const LogOut = async (req, res) => {
 
         if (!token) {
             res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: 'No token found',
                 data: '',
                 error: ''
@@ -139,7 +134,7 @@ const LogOut = async (req, res) => {
 
         if (!result) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: 'Admin not found',
                 data: '',
                 error: ''
@@ -147,7 +142,7 @@ const LogOut = async (req, res) => {
         }
 
         return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'Logged out successfully',
             data: '',
             error: ''
@@ -157,7 +152,7 @@ const LogOut = async (req, res) => {
         console.log(error);
 
         return res.status(500).json({
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
             message: '',
             data: '',
             error: error.message

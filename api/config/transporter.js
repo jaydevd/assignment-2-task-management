@@ -1,3 +1,10 @@
+/**
+ * @name transporter
+ * @file transporter.js
+ * @throwsF
+ * @description This file will configure nodemailer transporter object.
+ * @author Jaydev Dwivedi (Zignuts)
+ */
 const nodemailer = require('nodemailer');
 const path = require('path');
 const hbs = require('nodemailer-express-handlebars').default;
@@ -27,4 +34,4 @@ const handlebarOptions = {
 
 transporter.use('compile', hbs(handlebarOptions));
 
-module.exports = transporter;
+module.exports = { transporter };

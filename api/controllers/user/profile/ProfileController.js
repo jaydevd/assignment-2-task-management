@@ -1,19 +1,15 @@
 /**
- * @name signup/login/logout
- * @file bootstrap.js
+ * @name ProjectController
+ * @file ProjectController.js
  * @param {Request} req
  * @param {Response} res
  * @throwsF
- * @description AdminSignUp method will create a new user, AdminLogIn method will log in an existing user and AdminLogOut method will log out the logged in user.
+ * @description This file will contain all the methods of project.
  * @author Jaydev Dwivedi (Zignuts)
  */
 const { User } = require('./../../../models/index');
-const { v4: uuidv4 } = require('uuid');
 const Validator = require('validatorjs');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
-const { Sequelize, Op, where } = require('sequelize');
 const { VALIDATION_RULES } = require('../../../config/validations');
 
 const UpdateProfile = async (req, res) => {
@@ -22,11 +18,14 @@ const UpdateProfile = async (req, res) => {
         const { id, name } = req.body;
 
         const validationObj = req.body;
-        let validation = new Validator(validationObj, VALIDATION_RULES.USER);
+        let validation = new Validator(validationObj, {
+            id: VALIDATION_RULES.USER.id,
+            name: VALIDATION_RULES.USER.name
+        });
 
         if (validation.fails()) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 data: '',
                 message: 'validation failed',
                 error: validation.errors.all()
@@ -46,7 +45,7 @@ const UpdateProfile = async (req, res) => {
 
         const result = await User.update({
             name,
-            updatedAt: Math.floor(Date.noe() / 1000),
+            updatedAt: new Date(Math.floor(Date.now() / 1000)),
             updatedBy: id
         }, { where: { id: id } });
 
@@ -81,11 +80,32 @@ const DeleteProfile = async (req, res) => {
                 error: ''
             })
         }
+
+        const user = await User.findOne({ attributes: ['id'], where: { id: id } });
+
+        if (!user) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
+
         const result = await User.update({ isActive: false, isDeleted: true }, { where: { id: id } });
+
+        if (!result) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'unable to delete user',
+                data: '',
+                error: ''
+            })
+        }
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
-            message: '',
+            message: 'user deleted',
             data: '',
             error: ''
         })

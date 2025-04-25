@@ -1,3 +1,10 @@
+/**
+ * @name App
+ * @file app.js
+ * @throwsF
+ * @description This is the root server file of the project
+ * @author Jaydev Dwivedi (Zignuts)
+ */
 require('dotenv/config.js');
 const express = require('express');
 const { sequelize } = require('./api/config/database.js');
@@ -9,6 +16,7 @@ const app = express();
 const http = require('http');
 const { Server } = require('socket.io');
 const socket = require('./api/config/socket.js');
+const { startCronJobs } = require('./api/cron');
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -46,6 +54,7 @@ const Bootstrap = async () => {
 
 Bootstrap();
 socket(io);
+startCronJobs();
 
 const PORT = process.env.PORT || 5000;
 

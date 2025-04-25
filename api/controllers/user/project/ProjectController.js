@@ -1,23 +1,17 @@
 /**
- * @name signup/login/logout
- * @file UserAuthController.js
+ * @name ProjectController
+ * @file ProjectController.js
  * @param {Request} req
  * @param {Response} res
  * @throwsF
- * @description UserSignUp method will create a new user, UserLogIn method will log in an existing user and UserLogOut method will log out the logged in user.
+ * @description This file will contain project methods
  * @author Jaydev Dwivedi (Zignuts)
  */
 
-const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { Task } = require('./../../../models/index');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
-const { Sequelize, Op } = require('sequelize');
 const { VALIDATION_RULES } = require('../../../config/validations');
-const admin = require('firebase-admin');
 const client = require('../../../config/redis');
 
 const ListProjects = async (req, res) => {

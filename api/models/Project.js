@@ -20,11 +20,7 @@ const Project = sequelize.define("Project", {
         unique: true
     },
     members: {
-        type: DataTypes.ARRAY(DataTypes.STRING),
-        references: {
-            key: 'id',
-            model: 'users'
-        }
+        type: DataTypes.ARRAY(DataTypes.STRING)
     },
     ...commonAttributes
 },

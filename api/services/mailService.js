@@ -1,3 +1,10 @@
+/**
+ * @name mailService
+ * @file index.js
+ * @throwsF
+ * @description This file will contain mail service.
+ * @author Jaydev Dwivedi (Zignuts)
+ */
 const transporter = require("../config/transporter");
 
 const mailService = (user, context) => {

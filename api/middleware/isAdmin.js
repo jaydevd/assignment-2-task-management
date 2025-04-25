@@ -46,8 +46,6 @@ const isAdmin = async (req, res, next) => {
       where: { id: payload.id }
     });
 
-    console.log(admin);
-
     if (!admin.id) {
       return res.status(401).json({
         status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,

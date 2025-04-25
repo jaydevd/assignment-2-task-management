@@ -1,5 +1,24 @@
+/**
+ * @name socket
+ * @file socket.js
+ * @throwsF
+ * @description This file will configure and connect to socket.io client.
+ * @author Jaydev Dwivedi (Zignuts)
+ */
+
 const admin = require('firebase-admin');
 const users = new Map();
+const { Task } = require('../models/index.js');
+
+const saveTask = async (task) => {
+    try {
+        const result = await Task.update({ status: task.status, description: task.description, dueDate: task.dueDate }, { where: { id: task.id } });
+
+    } catch (error) {
+        console.log(error);
+        throw new Error("Error saving task to socket");
+    }
+}
 
 module.exports = async (io) => {
     try {
@@ -16,6 +35,7 @@ module.exports = async (io) => {
             });
 
             socket.on('update_task', ({ to, updateTask, fcmToken }) => {
+
                 const targetSocketId = users.get(to);
                 const payload = {
                     notification: {
@@ -24,6 +44,7 @@ module.exports = async (io) => {
                     },
                     token: fcmToken,
                 };
+                saveTask(updateTask);
                 const sendMessage = async () => {
                     await admin.messaging().send(payload);
                 }

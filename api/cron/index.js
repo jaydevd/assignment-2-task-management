@@ -1,49 +1,59 @@
-const user = require('../Routes/user');
-const { mailService } = require('../services/mailService');
+/**
+ * @name cronJob
+ * @file index.js
+ * @throwsF
+ * @description This file will contain methods for Tasks.
+ * @author Jaydev Dwivedi (Zignuts)
+ */
+
 const cron = require('node-cron');
+const { mailService } = require('../services/mailService');
 const { User, Project, Task } = require('../models');
-const { sequelize } = require('../config/database');
 
 const getData = async () => {
     try {
         const projects = await Project.findAll({ attributes: ['id', 'name', 'members'] });
         const users = await User.findAll({ attributes: ['id', 'name', 'email', 'role'] });
-        const tasks = await Task.findAll({ attributes: ['id', 'description', 'status', 'dueDate'] });
+        const tasks = await Task.findAll({ attributes: ['id', 'description', 'status', 'dueDate', 'user_id'] });
 
         return { projects, users, tasks };
-
     } catch (error) {
-        console.log(error);
-    }
-}
-const startCronJobs = async (transporter) => {
-    try {
-
-        console.log("Inside startCronJobs function");
-        const job = cron.schedule('48 18 * * *', () => {
-            let context;
-            let sender;
-            const { projects, users, tasks } = getData();
-            projects.forEach((project) => {
-                users.forEach((user) => {
-                    if (user.role == 'employee' && project.members.includes(user.id)) {
-                        tasks.forEach((task) => {
-                            if (task.user_id == user.id) {
-                                context.push(task);
-                            }
-                        })
-                    }
-                    if (user.role == 'admin') sender = admin;
-                })
-                mailService(transporter, sender, context);
-                context = {};
-            })
-        });
-        job.start(transporter);
-    } catch (error) {
-        console.log(error);
+        console.log('Error fetching data:', error);
+        return { projects: [], users: [], tasks: [] };
     }
 };
-startCronJobs();
+
+const startCronJobs = () => {
+
+    const job = cron.schedule('* * * * *', async () => {
+
+        const { projects, users, tasks } = await getData();
+
+        projects.forEach((project) => {
+            let context = [];
+            let sender = null;
+
+            users.forEach((user) => {
+                if (user.role === 'employee' && project.members.includes(user.id)) {
+                    tasks.forEach((task) => {
+                        if (task.user_id === user.id) {
+                            context.push(task);
+                        }
+                    });
+                }
+                if (user.role === 'admin') {
+                    sender = user;
+                }
+            });
+
+            if (sender && context.length > 0) {
+                mailService(sender, context);
+            }
+        });
+    });
+
+    job.start();
+
+};
 
 module.exports = { startCronJobs };

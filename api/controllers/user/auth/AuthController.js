@@ -8,18 +8,15 @@
  * @author Jaydev Dwivedi (Zignuts)
  */
 
-const { User, Task } = require('../../../models/index');
+const { User } = require('../../../models/index');
 const { v4: uuidv4 } = require('uuid');
 const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
-const { Sequelize, Op } = require('sequelize');
 const { VALIDATION_RULES } = require('../../../config/validations');
 const client = require('../../../config/redis');
 const { sequelize } = require('../../../config/database');
-const { startCronJobs } = require('../../../cron');
-const { transporter } = require('../../../config/transporter');
 
 const SignUp = async (req, res) => {
 
@@ -146,7 +143,14 @@ const LogIn = async (req, res) => {
             },
         );
 
-        console.log(user[0].id);
+        if (!result) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: "token not saved",
+                data: "",
+                error: ""
+            });
+        }
 
         const taskQuery = `
         SELECT t.id, t.description, t.status, t.comments, t.due_date, t.user_id, u.name FROM tasks t
@@ -154,8 +158,17 @@ const LogIn = async (req, res) => {
         ON t.user_id = u.id
         WHERE u.id = '${user[0].id}'
         `;
+
         const [tasks, meta] = await sequelize.query(taskQuery);
-        console.log(tasks);
+
+        if (!tasks) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: "tasks not found",
+                data: "",
+                error: ""
+            });
+        }
 
         client.set('user', JSON.stringify(user));
         client.set('tasks', JSON.stringify(tasks));
@@ -182,14 +195,13 @@ const LogOut = async (req, res) => {
     try {
         const reqUser = req.user;
         const token = reqUser.token;
-        console.log('token: ', token);
 
         const validationObj = { token };
         const validation = new Validator(validationObj, { token: VALIDATION_RULES.USER.token });
 
         if (validation.fails()) {
             return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR,
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 data: '',
                 message: 'Validation failed',
                 error: validation.errors.all()
@@ -202,18 +214,27 @@ const LogOut = async (req, res) => {
         });
 
         if ((token !== user.token)) {
-            return res.json({
-                status: '400',
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: 'No user found',
                 data: '',
                 error: ''
             })
         }
 
-        await User.update({ token: null }, { where: { id: user.id } });
+        const result = await User.update({ token: null }, { where: { id: user.id } });
+
+        if (!result) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'Unable to log out',
+                data: '',
+                error: ''
+            })
+        }
 
         return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS,
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'Logged out successfully',
             data: '',
             error: ''

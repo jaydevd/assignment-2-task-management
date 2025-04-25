@@ -4,8 +4,7 @@
  * @param {Request} req
  * @param {Response} res
  * @throwsF
- * @description AdminSignUp method will create a new user, AdminLogIn method will log in an existing user and AdminLogOut method will log out the logged in user.
- * @author Jaydev Dwivedi (Zignuts)
+ * @description This file is used to create an admin user in the database if it does not exist.
  */
 
 const { Admin } = require("../models/index");

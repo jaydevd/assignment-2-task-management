@@ -72,7 +72,6 @@ const isUser = async (req, res, next) => {
         }
 
         req.user = user;
-        console.log("user authentication done.");
         next();
     }
     catch (error) {

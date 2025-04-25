@@ -4,18 +4,15 @@
  * @param {Request} req
  * @param {Response} res
  * @throwsF
- * @description This file will contain Task management APIs.
+ * @description This file will contain Task management methods.
  * @author Jaydev Dwivedi (Zignuts)
  */
 
 const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { User, Task } = require('../../../models/index');
+const { Task } = require('../../../models/index');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
-const { Sequelize, Op } = require('sequelize');
 const { VALIDATION_RULES } = require('../../../config/validations');
 const client = require('../../../config/redis');
 
@@ -25,6 +22,18 @@ const ListTasks = async (req, res) => {
         const { query, dueDate, page, projectId, userId, status } = req.query;
         const limit = 2;
         const skip = Number(page - 1) * limit;
+
+        const validationObj = { dueDate, projectId, userId, status };
+        const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
 
         const rawQuery = `
         SELECT t.id, t.description, t.comments, t.status, t.user_id, t.due_date, t.created_at, u.name as user, p.name as project
@@ -47,7 +56,6 @@ const ListTasks = async (req, res) => {
                 error: ''
             })
         }
-        console.log(tasks);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -136,6 +144,18 @@ const Comment = async (req, res) => {
         const { taskID, comment, from } = req.body;
         const id = uuidv4();
 
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, VALIDATION_RULES.COMMENT);
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
+
         const rawQuery = `
         UPDATE tasks
         SET comments = comments || '[{"id": '${id}', "comment":'${comment}', "from":'${from}']'::jsonb
@@ -175,6 +195,18 @@ const UpdateTask = async (req, res) => {
     try {
 
         const { id, status, description, dueDate } = req.body;
+
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
 
         const date = new Date(dueDate);
         const isoString = date.toISOString();
@@ -229,6 +261,7 @@ const DeleteTask = async (req, res) => {
     try {
 
         const { id } = req.body;
+
         const result = await Task.update({ isActive: false, isDeleted: true }, { where: { id: id } });
 
         if (!result) {

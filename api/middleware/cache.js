@@ -1,11 +1,21 @@
+/**
+ * @name cronJob
+ * @file index.js
+ * @param {Request} req
+ * @param {Response} res
+ * @param {Next} next
+ * @throwsF
+ * @description This file contains method to fetch redis cache.
+ * @author Jaydev Dwivedi (Zignuts)
+ */
 const { HTTP_STATUS_CODES } = require("../config/constants");
 const client = require("../config/redis");
 
 const cache = async (req, res, next) => {
 
     try {
-        const user = await client.get('user');
-        const tasks = await client.get('tasks');
+        // const user = await client.get('user');
+        // const tasks = await client.get('tasks');
         // console.log(user);
         console.log(tasks);
 
