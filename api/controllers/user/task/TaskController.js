@@ -19,36 +19,19 @@ const client = require('../../../config/redis');
 const ListTasks = async (req, res) => {
     try {
         const user = req.user;
-        const id = user[0].id;
-        console.log(user, id);
-        const { query, dueDate, page, projectId, userId, status } = req.query;
+        const id = user.id;
 
-        const limit = 2;
+        const { title, dueDate, page, projectId, userId, status, limit } = req.query;
+
         const skip = Number(page - 1) * limit;
 
-        const cachedTasks = await client.zRange('tasks', skip, end);
-
-        if (cachedTasks) {
-
-            let tasks = await Promise.all(
-                cachedTasks.map(task => client.hGetAll(task.id))
-            );
-
-            if (query) {
-                tasks = tasks.filter(task => task.description == query || task.due_date == query);
-            }
-
-            return res.status(200).json({
-                status: HTTP_STATUS_CODES.SUCCESS.OK,
-                message: '',
-                data: tasks,
-                error: ''
-            });
-        }
-
-        const validationObj = { id };
+        const validationObj = req.query;
         const validation = new Validator(validationObj, {
-            id: VALIDATION_RULES.USER.id
+            title: VALIDATION_RULES.TASK.TITLE,
+            dueDate: VALIDATION_RULES.TASK.DUE_DATE,
+            projectId: VALIDATION_RULES.TASK.PROJECT_ID,
+            userId: VALIDATION_RULES.TASK.USER_ID,
+            STATUS: VALIDATION_RULES.TASK.STATUS
         });
 
         if (validation.fails()) {
@@ -60,39 +43,30 @@ const ListTasks = async (req, res) => {
             })
         }
 
-        const rawQuery = `
-        SELECT t.id, t.description, t.comments, t.status, t.due_date, t.user_id, t.created_at, u.name, p.name
+        const query = `
+        SELECT t.id, t.title, t.status, t.due_date, t.user_id, t.created_at, u.name, p.name
         FROM tasks t
         JOIN users u
         ON t.user_id = u.id
         JOIN projects p
         ON t.project_id = p.id
-        WHERE t.is_active = true AND t.description ILIKE '%${query || ''}%' AND t.due_date ILIKE '%${dueDate || ''}%' AND
-        t.status ILIKE '%${status || ''}%' AND t.project_id ILIKE '%${projectId || ''}%' AND t.user_id ILIKE '%${userId || ''}%'
-        LIMIT ${limit || 10} OFFSET ${skip || 0}
         `;
 
-        const [tasks, metadata] = await sequelize.query(rawQuery);
+        const TITLE = ` AND t.title ILIKE '%${title}%'`;
+        const DUE_DATE = ` AND t.due_date < '${dueDate}'`;
+        const STATUS = ` AND t.status < '${status}`;
+        const PROJECT = ` AND t.project_id = '${projectId}'`;
+        const USER = ` AND t.user_id = '${userId}'`;
+        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
 
-        if (!tasks) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'tasks not found',
-                data: '',
-                error: ''
-            })
-        }
+        if (title) query += TITLE;
+        if (dueDate) query += DUE_DATE;
+        if (status) query += STATUS;
+        if (projectId) query += PROJECT;
+        if (userId) query += USER;
+        query += LIMIT;
 
-        await Promise.all(
-            tasks.map(task =>
-                client.hSet(`task:${task.id}`, task)
-            )
-        );
-
-        await client.zAdd('tasks', tasks.map(task => ({
-            score: task.id,
-            value: `task:${task.id}`,
-        })));
+        const [tasks, metadata] = await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -133,12 +107,12 @@ const Comment = async (req, res) => {
 
         const id = uuidv4();
 
-        const rawQuery = `
+        const query = `
         UPDATE tasks
         SET comments = comments || '[{"id": "${id}", "comment":"${comment}", "from":"${userId}"}]'::jsonb
         WHERE id = '${taskId}'
         `;
-        const [result, metadata] = await sequelize.query(rawQuery);
+        const [result, metadata] = await sequelize.query(query);
 
         if (!result) {
             return res.status(400).json({

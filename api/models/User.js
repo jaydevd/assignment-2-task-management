@@ -1,14 +1,7 @@
-/**
- * @name userModel
- * @file User.js
- * @throwsF
- * @description This file will define model of Users table.
- * @author Jaydev Dwivedi (Zignuts)
- */
-
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
 const { commonAttributes } = require('./CommonAttributes');
+const { USER_POSITIONS, GENDER } = require("../config/constants");
 
 const User = sequelize.define("User", {
     id: {
@@ -24,8 +17,24 @@ const User = sequelize.define("User", {
         allowNull: false,
         unique: true
     },
-    role: {
-        type: DataTypes.ENUM("employee", "admin"),
+    phoneNumber: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    address: {
+        type: DataTypes.STRING(500),
+        allowNull: false
+    },
+    joinedAt: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    position: {
+        type: DataTypes.ENUM(USER_POSITIONS.INTERN, USER_POSITIONS.JR_SDE, USER_POSITIONS.MANAGER, USER_POSITIONS.SR_SDE, USER_POSITIONS.TEAM_LEAD),
+        allowNull: false
+    },
+    gender: {
+        type: DataTypes.ENUM(GENDER.MALE, GENDER.FEMALE),
         allowNull: false
     },
     token: {

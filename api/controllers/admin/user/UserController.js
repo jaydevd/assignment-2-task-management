@@ -9,46 +9,27 @@
  */
 
 const Validator = require("validatorjs");
-const { User } = require('./../../../models/index');
-const { HTTP_STATUS_CODES } = require('./../../../config/constants');
-const { sequelize } = require('./../../../config/database');
+const { User } = require('../../../models/index');
+const { HTTP_STATUS_CODES } = require('../../../config/constants');
+const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
 const client = require("../../../config/redis");
 
 const ListUsers = async (req, res) => {
     try {
-        const { query, page } = req.query;
-        const limit = 2;
+        const { search, page, limit } = req.query;
         const skip = Number(page - 1) * limit;
-        const cachedUsers = req.users;
 
-        if (cachedUsers) {
-            return res.status(200).json({
-                status: HTTP_STATUS_CODES.SUCCESS.OK,
-                message: '',
-                data: cachedUsers,
-                error: ''
-            })
-        }
-        const rawQuery = `
-        SELECT u.id, u.name, u.email
-        FROM users u
-        WHERE (u.name ILIKE '%${query || ''}%' OR u.email ILIKE '%${query || ''}%')
-        LIMIT ${limit || ''} OFFSET ${skip || 0}
-        `;
+        const SELECT = `SELECT u.id, u.name, u.email FROM users u WHERE u.is_active = true`;
+        const WHERE = ` (u.name ILIKE '%${search}%' OR u.email ILIKE '%${search}%')`;
+        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
 
-        const [users, metadata] = await sequelize.query(rawQuery);
+        let query = SELECT;
 
-        if (!users) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'No users found',
-                data: '',
-                error: ''
-            });
-        }
+        if (search) query += WHERE;
+        query += LIMIT;
 
-        client.set(JSON.stringify(users));
+        const [users, metadata] = await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -108,11 +89,6 @@ const UpdateUser = async (req, res) => {
                 error: ''
             });
         }
-
-        await client.zAdd('users', {
-            score: id,
-            value: `user:${id}`,
-        });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

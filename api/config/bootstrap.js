@@ -1,53 +1,36 @@
-/**
- * @name create admin
- * @file bootstrap.js
- * @param {Request} req
- * @param {Response} res
- * @throwsF
- * @description This file is used to create an admin user in the database if it does not exist.
- */
-
 const { Admin } = require("../models/index");
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
-const { VALIDATION_RULES } = require("./validations");
-const Validator = require('validatorjs');
+const { sequelize } = require("./database");
+const { ADMIN } = require('./constants');
 
 module.exports.bootstrap = async () => {
     try {
-        const admin = await Admin.findAll({ attributes: ['id', 'name', 'email', 'password'] }, { limit: 1 });
+        const query = `
+        SELECT id from admins limit 1;
+        `
+        const [admins, metadata] = await sequelize.query(query);
 
-        if (Object.keys(admin).length != 0) return;
+        if (admins.length() != 0) return;
 
         const id = uuidv4();
-        const name = "Test User";
-        const email = "test@gmail.com"
+        const name = ADMIN.NAME;
+        const email = ADMIN.EMAIL;
         const password = process.env.ADMIN_PASSWORD;
         const hashedPassword = await bcrypt.hash(password, 10);
-        const createdAt = new Date(Math.floor(Date.now() / 1000) * 1000);
+        const createdAt = Math.floor(Date.now() / 1000);
 
-        const validationObj = { id, name, email, password: hashedPassword };
-        console.log(validationObj);
-        const validation = new Validator(validationObj, VALIDATION_RULES.ADMIN);
-
-        if (validation.fails()) {
-            throw new Error("Validation failed", validation.errors.all());
-        }
-
-        const result = await Admin.create({
-            id: id,
-            name: name,
-            email: email,
+        await Admin.create({
+            id,
+            name,
+            email,
             password: hashedPassword,
-            createdAt: createdAt,
+            createdAt,
             createdBy: id,
             isActive: true,
             isDeleted: false
         });
 
-        if (!result) {
-            throw new Error("Unable to create admin");
-        }
     } catch (error) {
         throw new Error(error);
     }

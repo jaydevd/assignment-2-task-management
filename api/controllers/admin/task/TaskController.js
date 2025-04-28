@@ -14,34 +14,12 @@ const { Task } = require('../../../models/index');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
-const client = require('../../../config/redis');
 
 const ListTasks = async (req, res) => {
     try {
 
-        const { query, dueDate, page, projectId, userId, status } = req.query;
-        const limit = 2;
+        const { title, dueDate, page, projectId, userId, status, limit } = req.query;
         const skip = Number(page - 1) * limit;
-
-        const cachedTasks = await client.zRange('tasks', skip, end);
-
-        if (cachedTasks) {
-
-            let tasks = await Promise.all(
-                cachedTasks.map(task => client.hGetAll(task.id))
-            );
-
-            if (query) {
-                tasks = tasks.filter(task => task.description == query || task.due_date == query);
-            }
-
-            return res.status(200).json({
-                status: HTTP_STATUS_CODES.SUCCESS.OK,
-                message: '',
-                data: tasks,
-                error: ''
-            });
-        }
 
         const validationObj = { dueDate, projectId, userId, status };
         const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
@@ -55,18 +33,34 @@ const ListTasks = async (req, res) => {
             })
         }
 
-        const rawQuery = `
-        SELECT t.id, t.description, t.comments, t.status, t.user_id, t.due_date, t.created_at, u.name as user, p.name as project
+        const SELECT = `
+        SELECT t.id, t.title, t.status, t.user_id, t.due_date, t.created_at, u.name as user, p.name as project
         FROM tasks t
         JOIN users u
         ON t.user_id = u.id
         JOIN projects p
         ON t.project_id = p.id
-        WHERE t.is_active = true AND t.description ILIKE '%${query || ''}%' AND t.project_id ILIKE '%${projectId || ''}%' AND t.user_id ILIKE '%${userId || ''}%'
-        LIMIT ${limit || 10} OFFSET ${skip || 0}
+        WHERE t.is_active = true
         `;
 
-        const [tasks, metadata] = await sequelize.query(rawQuery);
+        const TITLE = ` AND t.title ILIKE '%${title}%'`;
+        const DUE_DATE = ` AND t.due_date <= '${dueDate}'`
+        const PROJECT_ID = ` AND t.project_id = '${projectId}'`;
+        const USER_ID = ` AND t.user_id = '${userId}'`;
+        const STATUS = ` AND t.status = '${status}'`;
+        const LIMIT = ` LIMIT ${limit || 10} OFFSET ${skip || 0}`;
+
+        const query = SELECT;
+
+        if (title) query += TITLE;
+        if (dueDate) query += DUE_DATE;
+        if (projectId) query += PROJECT_ID;
+        if (userId) query += USER_ID;
+        if (status) query += STATUS;
+
+        query += LIMIT;
+
+        const [tasks, metadata] = await sequelize.query(query);
 
         if (!tasks) {
             return res.status(400).json({
@@ -76,17 +70,6 @@ const ListTasks = async (req, res) => {
                 error: ''
             })
         }
-
-        await Promise.all(
-            tasks.map(task =>
-                client.hSet(`task:${task.id}`, task)
-            )
-        );
-
-        await client.zAdd('tasks', tasks.map(task => ({
-            score: task.id,
-            value: `task:${task.id}`,
-        })));
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -111,7 +94,7 @@ const AssignTask = async (req, res) => {
         const admin = req.admin;
         const createdBy = admin.id;
 
-        const { userId, description, dueDate, status, comments, projectId } = req.body;
+        const { userId, title, dueDate, status, projectId } = req.body;
 
         const validationObj = req.body;
         const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
@@ -126,35 +109,16 @@ const AssignTask = async (req, res) => {
         }
 
         const id = uuidv4();
-        const createdAt = new Date(Math.floor(Date.now() / 1000) * 1000);
+        const createdAt = Math.floor(Date.now() / 1000);
 
-        const result = await Task.create({
-            id,
-            description,
-            dueDate,
-            userId,
-            status,
-            projectId,
-            comments: comments || null,
-            createdAt,
-            createdBy,
-            isActive: true,
-            isDeleted: false
-        });
+        const query = `
+        INSERT INTO tasks
+            (id, title, due_date, status, user_id, project_id, created_at, created_by, is_active, is_deleted)
+        VALUES
+            ('${id}', '${title}', '${dueDate}', '${status}', '${userId}', '${projectId}', '${createdAt}', '${createdBy}', true, false);
+        `;
 
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'data not inserted',
-                data: '',
-                error: ''
-            })
-        }
-
-        await client.zAdd('tasks', {
-            score: id,
-            value: `task:${id}`,
-        });
+        await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -177,7 +141,7 @@ const AssignTask = async (req, res) => {
 const Comment = async (req, res) => {
     try {
 
-        const { taskID, comment, from } = req.body;
+        const { taskId, comment, userId } = req.body;
         const id = uuidv4();
 
         const validationObj = req.body;
@@ -192,21 +156,13 @@ const Comment = async (req, res) => {
             })
         }
 
-        const rawQuery = `
-        UPDATE tasks
-        SET comments = comments || '[{"id": '${id}', "comment":'${comment}', "from":'${from}']'::jsonb
-        WHERE id = '${taskID}'
-        `;
-        const result = await sequelize.query(rawQuery);
+        const query = `
+        INSERT INTO comments
+        (id, task_id, comment, user_id, created_at, created_by, is_active, is_deleted)
+        VALUES ('${id}', '${taskId}', '${comment}', '${userId}', '${Math.floor(Date.now() / 1000)}', true, false)
+            `;
 
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'comment not saved',
-                data: '',
-                error: ''
-            })
-        }
+        await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -230,7 +186,9 @@ const Comment = async (req, res) => {
 const UpdateTask = async (req, res) => {
     try {
 
-        const { id, status, description, dueDate } = req.body;
+        const { id, status, title, dueDate } = req.body;
+        const admin = req.admin;
+        const updatedBy = admin.id;
 
         const validationObj = req.body;
         const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
@@ -244,29 +202,13 @@ const UpdateTask = async (req, res) => {
             })
         }
 
-        const date = new Date(dueDate);
-        const dueDateISO = date.toISOString();
-
-        const rawQuery = `
+        const query = `
         UPDATE tasks
-        SET status = '${status}', description = '${description}', due_date = '${dueDateISO}'
+        SET status = '${status}', title = '${title}', due_date = '${dueDate}, updated_at = '${Math.floor(Date.now() / 1000)}', updated_by = '${updatedBy}'
         WHERE id = '${id}';
         `;
-        const result = await sequelize.query(rawQuery);
 
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'task not updated',
-                data: '',
-                error: ''
-            });
-        }
-
-        await client.zAdd('tasks', {
-            score: id,
-            value: `task:${id}`,
-        });
+        await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -290,18 +232,16 @@ const DeleteTask = async (req, res) => {
     try {
 
         const { id } = req.body;
-        const result = await Task.update({ isActive: false, isDeleted: true }, { where: { id } });
+        const admin = req.admin;
+        const updatedBy = admin.id;
 
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'task not deleted',
-                data: '',
-                error: ''
-            });
-        }
+        const query = `
+        UPDATE tasks
+        SET is_active = false, is_deleted = true, updated_at = '${Math.floor(Date.now() / 1000)}', updated_by = '${updatedBy}'
+        WHERE id = '${id}';
+        `;
 
-        await client.zRem('tasks', `task:${id}`);
+        await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

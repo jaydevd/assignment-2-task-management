@@ -1,11 +1,3 @@
-/**
- * @name commonAttributes
- * @file CommonAttributes.js
- * @throwsF
- * @description This file contains all common attributes used across the tables.
- * @author Jaydev Dwivedi (Zignuts)
- */
-
 const { DataTypes } = require("sequelize");
 
 const commonAttributes = {

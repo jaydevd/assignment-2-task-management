@@ -12,39 +12,15 @@ const Validator = require("validatorjs");
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
-const client = require('../../../config/redis');
 
 const ListProjects = async (req, res) => {
     try {
         const user = req.user;
         const id = user.id;
-        console.log(user, id);
-        const { query, page } = req.query;
 
-        const limit = 2;
+        const { search, page, limit } = req.query;
+
         const skip = Number(page - 1) * limit;
-
-        const start = skip;
-        const end = start + limit - 1;
-
-        const cachedProjects = await client.zRange('projects', start, end);
-
-        if (cachedProjects) {
-
-            let projects = await Promise.all(
-                ids.map(id => client.hGetAll(id))
-            );
-
-            if (query) {
-                projects = projects.filter(project => project.name == query);
-            }
-            return res.status(200).json({
-                status: HTTP_STATUS_CODES.SUCCESS.OK,
-                message: '',
-                data: projects,
-                error: ''
-            })
-        }
 
         const validationObj = { id };
         const validation = new Validator(validationObj, {
@@ -59,15 +35,19 @@ const ListProjects = async (req, res) => {
                 error: validation.errors.all()
             })
         }
-
-        const rawQuery = `
-        SELECT p.id, p.name
-        FROM projects p
-        WHERE '${id}' = ANY(p.members) AND p.name ILIKE '%${query || ''}%'
-        LIMIT ${limit || 10} OFFSET ${skip || 0}
+        const query = `SELECT p.id, p.name FROM projects p
+        JOIN project_members pm
+        ON p.id = pm.project_id
+        WHERE pm.id = '${id}'
         `;
 
-        const [projects, metadata] = await sequelize.query(rawQuery);
+        const WHERE = ` AND p.name ILIKE '%${search}`;
+        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
+
+        if (search) query += WHERE;
+        query += LIMIT;
+
+        const [projects, metadata] = await sequelize.query(query);
 
         if (!projects) {
             return res.status(400).json({
@@ -77,17 +57,6 @@ const ListProjects = async (req, res) => {
                 error: ''
             })
         }
-
-        await Promise.all(
-            projects.map(project =>
-                client.hSet(`project:${project.id}`, project)
-            )
-        );
-
-        await client.zAdd('projects', projects.map(project => ({
-            score: project.id,
-            value: `user:${project.id}`,
-        })));
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

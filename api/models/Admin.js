@@ -1,11 +1,3 @@
-/**
- * @name AdminModel
- * @file Admin.js
- * @throwsF
- * @description This file will define model of Admins table.
- * @author Jaydev Dwivedi (Zignuts)
- */
-
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
 const { commonAttributes } = require('./CommonAttributes');
@@ -27,12 +19,9 @@ const Admin = sequelize.define("Admin", {
     password: {
         type: DataTypes.STRING(60),
         allowNull: false,
-        unique: false
     },
     token: {
         type: DataTypes.STRING(200),
-        allowNull: true,
-        unique: true,
     },
     ...commonAttributes
 },

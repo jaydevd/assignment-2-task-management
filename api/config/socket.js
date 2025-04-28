@@ -1,71 +1,28 @@
-/**
- * @name socket
- * @file socket.js
- * @throwsF
- * @description This file will configure and connect to socket.io client.
- * @author Jaydev Dwivedi (Zignuts)
- */
+const { Disconnect } = require('../helpers/socket/Disconnect');
+const { Register } = require('../helpers/socket/Register');
+const { TaskUpdate } = require('../helpers/socket/TaskUpdate');
+const { IO_EVENTS, SOCKET_EVENTS } = require('./constants');
 
-const admin = require('firebase-admin');
 const users = new Map();
-const { Task } = require('../models/index.js');
-
-const saveTask = async (task) => {
-    try {
-        const result = await Task.update({ status: task.status, description: task.description, dueDate: task.dueDate }, { where: { id: task.id } });
-
-    } catch (error) {
-        console.log(error);
-        throw new Error("Error saving task to socket");
-    }
-}
 
 module.exports = async (io) => {
     try {
-        admin.initializeApp({
-            credential: admin.credential.cert(require('./../../service-account.json'))
-        });
-        io.on('connection', (socket) => {
+
+        io.on(IO_EVENTS.CONNECTION, (socket) => {
 
             // Listen for user joining
-            socket.on('register', (userId) => {
-                users.set(userId, socket.id);
-                console.log(users);
-                console.log(`User ${userId} registered with socket ID ${socket.id}`);
+            socket.on(SOCKET_EVENTS.REGISTER, (userId) => {
+                Register(socket, users, userId);
             });
 
-            socket.on('update_task', ({ to, updateTask, fcmToken }) => {
-
-                const targetSocketId = users.get(to);
-                const payload = {
-                    notification: {
-                        title: 'Task Management System',
-                        body: "Task Updated",
-                    },
-                    token: fcmToken,
-                };
-                saveTask(updateTask);
-                const sendMessage = async () => {
-                    await admin.messaging().send(payload);
-                }
-                sendMessage();
-
-                if (targetSocketId) {
-                    io.to(targetSocketId).emit('update_task', {
-                        from: socket.id,
-                        updateTask,
-                    });
-                }
+            // Listen for task updates
+            socket.on(SOCKET_EVENTS.TASK_UPDATE, ({ to, updateTask, fcmToken }) => {
+                TaskUpdate(socket, to, updateTask, fcmToken);
             });
 
             // Cleanup on disconnect
-            socket.on('disconnect', () => {
-                for (const [userId, socketId] of users.entries()) {
-                    if (socketId === socket.id) {
-                        users.delete(userId);
-                        break;
-                    }
-                }
+            socket.on(SOCKET_EVENTS.DISCONNECT, () => {
+                Disconnect(socket, users);
                 console.log('User disconnected:', socket.id);
             });
         });

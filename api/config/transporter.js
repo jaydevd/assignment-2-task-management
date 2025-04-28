@@ -1,37 +1,22 @@
-/**
- * @name transporter
- * @file transporter.js
- * @throwsF
- * @description This file will configure nodemailer transporter object.
- * @author Jaydev Dwivedi (Zignuts)
- */
 const nodemailer = require('nodemailer');
 const path = require('path');
-const hbs = require('nodemailer-express-handlebars').default;
 
-const transporter = nodemailer.createTransport({
-    host: 'live.smtp.mailtrap.io',
-    port: 587,
-    pool: true,
-    auth: {
-        user: 'api',
-        pass: process.env.EMAIL_PASSWORD
-    },
-    maxMessages: Infinity,
-    maxConnections: 5
-});
+let transporter = new Object();
+try {
+    transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        pool: true,
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD
+        },
+    });
 
-const handlebarOptions = {
-    viewEngine: {
-        extname: '.hbs',
-        partialsDir: path.resolve(__dirname, '../templates/partials'),
-        layoutsDir: path.resolve(__dirname, '../templates'),
-        defaultLayout: false,
-    },
-    viewPath: path.resolve(__dirname, '../templates'),
-    extName: '.hbs',
-};
+    transporter.use('compile', path.resolve(__dirname, '../templates/index.hbs'));
 
-transporter.use('compile', hbs(handlebarOptions));
+} catch (error) {
+    throw new Error(error);
+}
 
 module.exports = { transporter };

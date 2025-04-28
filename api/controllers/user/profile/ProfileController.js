@@ -12,15 +12,17 @@ const { User } = require('./../../../models/index');
 const Validator = require('validatorjs');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { VALIDATION_RULES } = require('../../../config/validations');
+const { sequelize } = require('../../../config/database');
 
 const UpdateProfile = async (req, res) => {
 
     try {
-        const { id, name } = req.body;
+        const user = req.user;
+        const id = user.id;
+        const { name, phoneNumber, gender, joinedAt, address } = req.body;
 
         const validationObj = req.body;
         let validation = new Validator(validationObj, {
-            id: VALIDATION_RULES.USER.id,
             name: VALIDATION_RULES.USER.name
         });
 
@@ -33,24 +35,20 @@ const UpdateProfile = async (req, res) => {
             })
         }
 
-        const verifyID = await User.findOne({ attributes: ['id'], where: { id } });
-
-        if (!verifyID) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'id not found',
-                data: '',
-                error: ''
-            })
-        }
-
         const updatedAt = new Date(Math.floor(Date.now() / 1000));
 
-        const result = await User.update({
-            name,
-            updatedAt,
-            updatedBy: id
-        }, { where: { id } });
+        const query = `
+        UPDATE users SET
+        name = '${name}',
+        phone_number = '${phoneNumber}',
+        gender = '${gender}',
+        joined_at = '${joinedAt}',
+        updated_at = '${updatedAt}',
+        updated_by = '${id}',
+        WHERE id = '${id}'
+        `;
+
+        await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -71,56 +69,4 @@ const UpdateProfile = async (req, res) => {
     }
 }
 
-const DeleteProfile = async (req, res) => {
-    try {
-        const { id } = req.body;
-
-        if (!id) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
-
-        const user = await User.findOne({ attributes: ['id'], where: { id } });
-
-        if (!user) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
-
-        const result = await User.update({ isActive: false, isDeleted: true }, { where: { id } });
-
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'unable to delete user',
-                data: '',
-                error: ''
-            })
-        }
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS.OK,
-            message: 'user deleted',
-            data: '',
-            error: ''
-        })
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        })
-    }
-}
-
-module.exports = { UpdateProfile, DeleteProfile }
+module.exports = { UpdateProfile }

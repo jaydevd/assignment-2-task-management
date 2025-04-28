@@ -2,20 +2,28 @@ const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
 const { commonAttributes } = require('./CommonAttributes');
 
-const Project = sequelize.define("Project", {
+const Comment = sequelize.define("Comment", {
     id: {
         type: DataTypes.STRING(60),
         primaryKey: true
     },
-    name: {
+    userId: {
+        field: 'user_id',
         type: DataTypes.STRING(60),
-        unique: true
+        references: {
+            key: 'id',
+            model: 'users'
+        }
+    },
+    comment: {
+        type: DataTypes.STRING(200),
+        allowNull: false
     },
     ...commonAttributes
 },
     {
-        tableName: "projects",
+        tableName: "comments",
         timestamps: false
     });
 
-module.exports = { Project };
+module.exports = { Comment };

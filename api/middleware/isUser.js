@@ -1,17 +1,6 @@
-/**
- * @name userAuthentication
- * @file isAuthenticated.js
- * @param {Request} req
- * @param {Response} res
- * @param {next} next
- * @throwsF
- * @description This file will check if the user is authenticated or not.
- * @author Jaydev Dwivedi (Zignuts)
- */
-
 const jwt = require('jsonwebtoken');
-const { User } = require('../models/index.js');
 const { HTTP_STATUS_CODES } = require('../config/constants.js');
+const { sequelize } = require('../config/database.js');
 
 const isUser = async (req, res, next) => {
 
@@ -22,52 +11,56 @@ const isUser = async (req, res, next) => {
         if (!token) {
             return res.status(401).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-                message: '',
+                message: 'Token not found',
                 data: '',
-                error: 'Token not found'
+                error: ''
             })
         }
 
+        // Verify JWT
         const payload = jwt.verify(token, process.env.SECRET_KEY);
 
         if (!payload) {
             return res.status(401).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-                message: '',
-                error: 'Invalid Token',
-                data: ''
+                message: 'Invalid Token',
+                data: '',
+                error: ''
             })
         }
 
-        const user = await User.findOne({
-            where: { token: token, id: payload.id },
-            attributes: ['id', 'name', 'email', 'token', 'isActive']
-        });
+        const query = `
+        SELECT id, token, is_active FROM users WHERE id = ${payload.id}
+        `;
 
-        if (!user) {
+        const [users, metadata] = sequelize.query(query);
+
+        if (users.length() == 0) {
             return res.status(401).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-                message: '',
-                error: 'User not found',
-                data: ''
+                message: 'No user found',
+                data: '',
+                error: ''
             });
         }
 
-        if (!user.isActive) {
+        const user = users[0];
+
+        if (!user.is_active) {
             return res.status(401).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-                message: '',
-                error: 'User not active',
-                data: ''
+                message: 'User not active',
+                data: '',
+                error: ''
             });
         }
 
         if (token !== user.token) {
             return res.status(401).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-                message: '',
+                message: "Tokens don't match",
                 data: '',
-                error: "Tokens don't match"
+                error: ''
             });
         }
 

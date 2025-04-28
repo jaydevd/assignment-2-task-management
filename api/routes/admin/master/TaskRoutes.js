@@ -1,11 +1,3 @@
-/**
- * @name routesIndex
- * @file index.js
- * @throwsF
- * @description This file will import all routes.
- * @author Jaydev Dwivedi (Zignuts)
- */
-
 const express = require('express');
 const {
     AssignTask,
@@ -13,7 +5,7 @@ const {
     Comment,
     DeleteTask,
     ListTasks
-} = require('../../../controllers/admin/master/TaskController');
+} = require('../../../controllers/admin/task/TaskController');
 const { isAdmin } = require('./../../../middleware/isAdmin');
 
 const router = express.Router();

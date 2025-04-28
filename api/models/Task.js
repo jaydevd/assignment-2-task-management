@@ -1,16 +1,10 @@
-/**
- * @name AdminModel
- * @file Admin.js
- * @throwsF
- * @description This file will define model of Admins table.
- * @author Jaydev Dwivedi (Zignuts)
- */
-
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
 const { commonAttributes } = require('./CommonAttributes');
+const { STATUS } = require("../config/constants");
 
 const Task = sequelize.define("Task", {
+
     id: {
         type: DataTypes.STRING(60),
         primaryKey: true
@@ -23,19 +17,16 @@ const Task = sequelize.define("Task", {
             model: 'users'
         }
     },
-    description: {
-        type: DataTypes.STRING(60),
+    title: {
+        type: DataTypes.STRING(128),
         allowNull: false,
     },
     dueDate: {
         field: 'due_date',
         type: DataTypes.DATE,
     },
-    comments: {
-        type: DataTypes.JSONB
-    },
     status: {
-        type: DataTypes.ENUM(['to-do', 'in-progress', 'done', 'on-hold', 'in-review', 'cancelled', 'postponed', 'pending'])
+        type: DataTypes.ENUM(STATUS.TO_DO, STATUS.CANCELLED, STATUS.POSTPONED, STATUS.PENDING, STATUS.DONE, STATUS.IN_PROGRESS, STATUS.IN_REVIEW, STATUS.ON_HOLD)
     },
     projectId: {
         field: 'project_id',

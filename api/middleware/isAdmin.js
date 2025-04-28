@@ -1,17 +1,7 @@
-/**
- * @name AdminAuthentication
- * @file isAdmin.js
- * @param {Request} req
- * @param {Response} res
- * @param {next} next
- * @throwsF
- * @description This file will check if the admin is authenticated or not.
- * @author Jaydev Dwivedi (Zignuts)
- */
-
 const jwt = require('jsonwebtoken');
 const { Admin } = require('../models/index.js');
 const { HTTP_STATUS_CODES } = require('../config/constants.js');
+const { sequelize } = require('../config/database.js');
 
 const isAdmin = async (req, res, next) => {
 
@@ -23,9 +13,9 @@ const isAdmin = async (req, res, next) => {
     if (!token) {
       return res.status(400).json({
         status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-        message: '',
+        message: 'Token not found',
         data: '',
-        error: 'Token not found'
+        error: ''
       })
     }
 
@@ -35,42 +25,45 @@ const isAdmin = async (req, res, next) => {
     if (!payload) {
       return res.status(401).json({
         status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-        message: '',
-        error: 'Invalid Token',
-        data: ''
+        message: 'Invalid Token',
+        data: '',
+        error: ''
       })
     }
 
-    const admin = await Admin.findOne({
-      attributes: ['id', 'name', 'email', 'token', 'isActive'],
-      where: { id: payload.id }
-    });
+    const query = `
+    SELECT id, token, is_active FROM admins WHERE id = ${payload.id}
+    `;
 
-    if (!admin.id) {
+    const [admins, metadata] = sequelize.query(query);
+
+    if (admins.length() == 0) {
       return res.status(401).json({
         status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-        message: '',
-        error: 'No user found',
-        data: ''
+        message: 'No user found',
+        data: '',
+        error: ''
       });
     }
 
-    if (!admin.isActive) {
-      console.log("admin active? ", admin.isActive);
+    const admin = admin[0];
+
+    if (!admin.is_active) {
+      console.log("admin active? ", admin.is_active);
       return res.status(403).json({
         status: HTTP_STATUS_CODES.CLIENT_ERROR.FORBIDDEN,
-        message: '',
-        error: 'Admin is not active',
-        data: ''
+        message: 'Admin is not active',
+        data: '',
+        error: ''
       });
     }
 
     if (token !== admin.token) {
       return res.status(401).json({
         status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-        message: '',
+        message: "Tokens don't match",
         data: '',
-        error: "Tokens don't match"
+        error: ''
       });
     }
 
@@ -82,7 +75,7 @@ const isAdmin = async (req, res, next) => {
     console.log(error);
     return res.status(500).json({
       status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-      message: '',
+      message: 'internal server error',
       data: '',
       error: error.message
     });
