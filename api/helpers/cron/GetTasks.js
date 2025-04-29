@@ -12,12 +12,12 @@ module.exports.GetTasks = async () => {
         t.is_active = true AND
         due_date >= '${date}'
         `;
+
         const [tasks, metadata] = sequelize.query(query);
 
         return tasks;
 
     } catch (error) {
         console.log('Error fetching data:', error);
-        return { projects: [], users: [], tasks: [] };
     }
 };

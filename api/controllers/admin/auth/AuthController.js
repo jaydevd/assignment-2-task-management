@@ -16,6 +16,7 @@ const { VALIDATION_RULES } = require('../../../config/validations');
 const client = require("../../../config/redis");
 const { sequelize } = require("../../../config/database");
 const { SendPasswordResetMail } = require('../../../helpers/mail/ForgotPassword');
+const { Admin } = require('../../../models');
 
 const LogIn = async (req, res) => {
     try {
@@ -36,14 +37,10 @@ const LogIn = async (req, res) => {
             })
         }
 
-        const query = `
-        SELECT id, password FROM admins WHERE email = '${email}';
-        `;
-
-        const [result, metadata] = await sequelize.query(query);
+        const result = await Admin.findOne({ attributes: ['id', 'password'], where: { email } });
         // console.log(result);
 
-        if (result == {}) {
+        if (!result) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: "Admin Not Found",
@@ -51,8 +48,6 @@ const LogIn = async (req, res) => {
                 error: ""
             });
         }
-        const admin = result[0];
-        console.log(admin);
 
         const isMatch = await bcrypt.compare(password, admin.password);
 
@@ -94,12 +89,9 @@ const LogIn = async (req, res) => {
 const LogOut = async (req, res) => {
     try {
         const admin = req.admin;
-        const query = `
-        UPDATE admins SET token = null WHERE id = '${admin.id}';
-        `;
+        const id = admin.id;
 
-        await sequelize.query(query);
-        client.del("admin");
+        await Admin.update({ token: null, updatedAt: Math.floor(Date.now() / 1000), updatedBy: id }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -126,6 +118,7 @@ const ForgotPassword = async (req, res) => {
 
         const token = jwt.sign({ email }, { expiresIn: '1hr' });
 
+        await A
         const query = `
         UPDATE admins SET token = '${token}' WHERE email = '${email}';
         `;

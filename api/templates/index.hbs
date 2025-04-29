@@ -11,7 +11,7 @@
     <h1>Hey {{ name }},</h1>
     <p> We hope you're doing well</p>
     <p>Today's task log is ready! Find the log below.</p>
-    {{ #each context}}
+    {{ #each tasks}}
     <ul
         style="display: flex; flex-direction: column; justify-content: center; gap: 2px; margin: 5px; list-style-type: none;">
         <li>{{this.description}}</li>
