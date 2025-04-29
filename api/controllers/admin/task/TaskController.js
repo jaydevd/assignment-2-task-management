@@ -10,7 +10,6 @@
 
 const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
-const { Task } = require('../../../models/index');
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
@@ -18,11 +17,17 @@ const { VALIDATION_RULES } = require('../../../config/validations');
 const ListTasks = async (req, res) => {
     try {
 
-        const { title, dueDate, page, projectId, userId, status, limit } = req.query;
+        const { title, dueDate, page, status, userId, projectId, limit } = req.query;
         const skip = Number(page - 1) * limit;
 
-        const validationObj = { dueDate, projectId, userId, status };
-        const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
+        const validationObj = { title, dueDate, status };
+        const validation = new Validator(validationObj, {
+            title: VALIDATION_RULES.TASK.TITLE,
+            dueDate: VALIDATION_RULES.TASK.DUE_DATE,
+            status: VALIDATION_RULES.TASK.STATUS,
+            userId: VALIDATION_RULES.TASK.USER_ID,
+            projectId: VALIDATION_RULES.TASK.PROJECT_ID
+        });
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -33,43 +38,34 @@ const ListTasks = async (req, res) => {
             })
         }
 
-        const SELECT = `
+        const date = Math.floor(Date.now() / 1000);
+
+        const query = `
         SELECT t.id, t.title, t.status, t.user_id, t.due_date, t.created_at, u.name as user, p.name as project
         FROM tasks t
         JOIN users u
         ON t.user_id = u.id
         JOIN projects p
         ON t.project_id = p.id
-        WHERE t.is_active = true
+        WHERE
+        t.is_active = true AND
+        t.user_id = '${userId}' AND
+        t.project_id = '${projectId} AND
+        t.due_date >= '${date}' AND t.due_date < '${date}'
         `;
 
         const TITLE = ` AND t.title ILIKE '%${title}%'`;
         const DUE_DATE = ` AND t.due_date <= '${dueDate}'`
-        const PROJECT_ID = ` AND t.project_id = '${projectId}'`;
-        const USER_ID = ` AND t.user_id = '${userId}'`;
         const STATUS = ` AND t.status = '${status}'`;
-        const LIMIT = ` LIMIT ${limit || 10} OFFSET ${skip || 0}`;
-
-        const query = SELECT;
+        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
 
         if (title) query += TITLE;
         if (dueDate) query += DUE_DATE;
-        if (projectId) query += PROJECT_ID;
-        if (userId) query += USER_ID;
         if (status) query += STATUS;
 
         query += LIMIT;
 
         const [tasks, metadata] = await sequelize.query(query);
-
-        if (!tasks) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -97,7 +93,13 @@ const AssignTask = async (req, res) => {
         const { userId, title, dueDate, status, projectId } = req.body;
 
         const validationObj = req.body;
-        const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
+        const validation = new Validator(validationObj, {
+            title: VALIDATION_RULES.TASK.TITLE,
+            dueDate: VALIDATION_RULES.TASK.DUE_DATE,
+            projectId: VALIDATION_RULES.TASK.PROJECT_ID,
+            userId: VALIDATION_RULES.TASK.USER_ID,
+            status: VALIDATION_RULES.TASK.STATUS
+        });
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -135,50 +137,6 @@ const AssignTask = async (req, res) => {
             data: '',
             error: error.message
         })
-    }
-}
-
-const Comment = async (req, res) => {
-    try {
-
-        const { taskId, comment, userId } = req.body;
-        const id = uuidv4();
-
-        const validationObj = req.body;
-        const validation = new Validator(validationObj, VALIDATION_RULES.COMMENT);
-
-        if (validation.fails()) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'validation failed',
-                data: '',
-                error: validation.errors.all()
-            })
-        }
-
-        const query = `
-        INSERT INTO comments
-        (id, task_id, comment, user_id, created_at, created_by, is_active, is_deleted)
-        VALUES ('${id}', '${taskId}', '${comment}', '${userId}', '${Math.floor(Date.now() / 1000)}', true, false)
-            `;
-
-        await sequelize.query(query);
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS.OK,
-            message: 'comment saved',
-            data: '',
-            error: ''
-        });
-
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        });
     }
 }
 
@@ -264,7 +222,6 @@ const DeleteTask = async (req, res) => {
 module.exports = {
     AssignTask,
     UpdateTask,
-    Comment,
     DeleteTask,
     ListTasks
 }

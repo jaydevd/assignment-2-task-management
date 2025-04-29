@@ -22,19 +22,6 @@ const ListProjects = async (req, res) => {
 
         const skip = Number(page - 1) * limit;
 
-        const validationObj = { id };
-        const validation = new Validator(validationObj, {
-            id: VALIDATION_RULES.USER.id
-        });
-
-        if (validation.fails()) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'validation failed',
-                data: '',
-                error: validation.errors.all()
-            })
-        }
         const query = `SELECT p.id, p.name FROM projects p
         JOIN project_members pm
         ON p.id = pm.project_id
@@ -48,15 +35,6 @@ const ListProjects = async (req, res) => {
         query += LIMIT;
 
         const [projects, metadata] = await sequelize.query(query);
-
-        if (!projects) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'tasks not found',
-                data: '',
-                error: ''
-            })
-        }
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

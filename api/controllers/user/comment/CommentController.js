@@ -1,38 +1,40 @@
 /**
- * @name signup/login/logout
- * @file UserAuthController.js
+ * @name TaskController
+ * @file TaskController.js
  * @param {Request} req
  * @param {Response} res
  * @throwsF
- * @description UserSignUp method will create a new user, UserLogIn method will log in an existing user and UserLogOut method will log out the logged in user.
+ * @description This file will contain Task management methods.
  * @author Jaydev Dwivedi (Zignuts)
  */
 
+const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
 
-const ListUsers = async (req, res) => {
+const ListComments = async (req, res) => {
     try {
-        const { search, page, limit } = req.query;
+        const { comment, page, limit } = req.query;
         const skip = Number(page - 1) * limit;
 
-        const SELECT = `SELECT u.id, u.name, u.email FROM users u WHERE u.is_active = true`;
-        const WHERE = ` (u.name ILIKE '%${search}%' OR u.email ILIKE '%${search}%')`;
+        const query = `
+        SELECT id, comment, user_id, task_id FROM comments
+        LIMIT ${limit} OFFSET ${skip}
+        `;
+        const WHERE = ` WHERE comment = '%${comment}%'`;
         const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
 
-        let query = SELECT;
-
-        if (search) query += WHERE;
+        if (comment) query += WHERE;
         query += LIMIT;
 
-        const [users, metadata] = await sequelize.query(query);
+        const [comments, metadata] = await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: users,
+            data: comments,
             error: ''
         });
 
@@ -47,80 +49,20 @@ const ListUsers = async (req, res) => {
     }
 }
 
-const UpdateUser = async (req, res) => {
+const AddComment = async (req, res) => {
     try {
-        const { id, name, phoneNumber, position, address, gender, joinedAt } = req.body;
 
-        const validationObj = req.body;
-        const validation = new Validator(validationObj, {
-            id: VALIDATION_RULES.USER.ID,
-            name: VALIDATION_RULES.USER.NAME,
-            position: VALIDATION_RULES.USER.POSITION,
-            address: VALIDATION_RULES.USER.ADDRESS,
-            gender: VALIDATION_RULES.USER.GENDER,
-            joinedAt: VALIDATION_RULES.USER.JOINED_AT
-        });
-
-        if (validation.fails()) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'Validation failed',
-                data: '',
-                error: validation.errors.all()
-            })
-        }
-
-        const query = `
-        UPDATE users
-        SET 
-        `;
-        const NAME = `name = '${name}'`;
-        const PHONE_NUMBER = `,phone_number = '${phoneNumber}'`;
-        const ADDRESS = `,address = '${address}'`;
-        const GENDER = `,gender = '${gender}'`;
-        const JOINED_AT = `,joined_at = '${joinedAt}'`;
-        const POSITION = `,POSITION = '${position}`;
-        const WHERE = ` WHERE id = '${id}'`;
-
-        if (name) query += NAME;
-        if (phoneNumber) query += PHONE_NUMBER;
-        if (address) query += ADDRESS;
-        if (gender) query += GENDER;
-        if (joinedAt) query += JOINED_AT;
-        if (position) query += POSITION;
-
-        query += WHERE;
-
-        await sequelize.query(query);
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS.OK,
-            message: 'user updated',
-            data: result,
-            error: ''
-        });
-
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        });
-    }
-}
-
-const DeleteUser = async (req, res) => {
-    try {
-        const { id } = req.body;
+        const { taskId, comment, userId } = req.body;
+        const id = uuidv4();
         const admin = req.admin;
-        const updatedBy = admin.id;
+        const createdBy = admin.id;
 
         const validationObj = req.body;
         const validation = new Validator(validationObj, {
-            id: VALIDATION_RULES.USER.ID
-        })
+            taskId: VALIDATION_RULES.COMMENT.TASK_ID,
+            comment: VALIDATION_RULES.COMMENT.COMMENT,
+            userId: VALIDATION_RULES.COMMENT.USER_ID
+        });
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -131,10 +73,56 @@ const DeleteUser = async (req, res) => {
             })
         }
 
-        const updatedAt = Math.floor(Date.now() / 1000);
+        const createdAt = Math.floor(Date.now() / 1000);
 
         const query = `
-        UPDATE users
+        INSERT INTO comments
+            (id, task_id, comment, user_id, created_at, created_by, is_active, is_deleted)
+        VALUES
+            ('${id}', '${taskId}', '${comment}', '${userId}', '${createdAt}', '${createdBy}', true, false)
+        `;
+
+        await sequelize.query(query);
+
+        return res.status(200).json({
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
+            message: 'comment saved',
+            data: '',
+            error: ''
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
+            message: '',
+            data: '',
+            error: error.message
+        });
+    }
+}
+
+const DeleteComment = async (req, res) => {
+    try {
+        const { id } = req.body;
+
+        const validationObj = req.body;
+
+        const validation = new Validator(validationObj, {
+            id: VALIDATION_RULES.COMMENT.ID
+        });
+
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: validation.errors.all()
+            })
+        }
+
+        const query = `
+        UPDATE comments
         SET
         updated_at = '${updatedAt}',
         updated_by = '${updatedBy}',
@@ -147,7 +135,7 @@ const DeleteUser = async (req, res) => {
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
-            message: '',
+            message: 'comment deleted',
             data: '',
             error: ''
         });
@@ -164,7 +152,7 @@ const DeleteUser = async (req, res) => {
 }
 
 module.exports = {
-    ListUsers,
-    UpdateUser,
-    DeleteUser
+    ListComments,
+    AddComment,
+    DeleteComment
 }

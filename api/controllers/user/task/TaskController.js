@@ -11,7 +11,7 @@
 const { v4: uuidv4 } = require('uuid');
 const Validator = require("validatorjs");
 const { Task } = require('./../../../models/index');
-const { HTTP_STATUS_CODES } = require('./../../../config/constants');
+const { HTTP_STATUS_CODES, STATUS } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
 const client = require('../../../config/redis');
@@ -22,7 +22,6 @@ const ListTasks = async (req, res) => {
         const id = user.id;
 
         const { title, dueDate, page, projectId, userId, status, limit } = req.query;
-
         const skip = Number(page - 1) * limit;
 
         const validationObj = req.query;
@@ -50,6 +49,7 @@ const ListTasks = async (req, res) => {
         ON t.user_id = u.id
         JOIN projects p
         ON t.project_id = p.id
+        WHERE due_date >= '${date}'
         `;
 
         const TITLE = ` AND t.title ILIKE '%${title}%'`;
@@ -86,15 +86,20 @@ const ListTasks = async (req, res) => {
     }
 }
 
-const Comment = async (req, res) => {
+// user can change status of the task
+const UpdateTask = async (req, res) => {
     try {
 
-        const { taskId, comment } = req.body;
-        const user = req.user;
-        const userId = user.id;
+        const { id, status } = req.body;
 
-        const validationObj = { taskId, comment, from: userId };
-        const validation = new Validator(validationObj, VALIDATION_RULES.COMMENT);
+        const validationObj = req.body;
+        const validation = new Validator(validationObj, {
+            title: VALIDATION_RULES.TASK.TITLE,
+            status: VALIDATION_RULES.TASK.STATUS,
+            userId: VALIDATION_RULES.TASK.USER_ID,
+            projectId: VALIDATION_RULES.TASK.PROJECT_ID,
+            dueDate: VALIDATION_RULES.TASK.DUE_DATE
+        });
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -105,84 +110,13 @@ const Comment = async (req, res) => {
             })
         }
 
-        const id = uuidv4();
-
         const query = `
         UPDATE tasks
-        SET comments = comments || '[{"id": "${id}", "comment":"${comment}", "from":"${userId}"}]'::jsonb
-        WHERE id = '${taskId}'
+        SET status = '${status}', title = '${title}', updated_at = '${Math.floor(Date.now() / 1000)}', updated_by = '${updatedBy}'
+        WHERE id = '${id}';
         `;
-        const [result, metadata] = await sequelize.query(query);
 
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
-                data: '',
-                error: ''
-            });
-        }
-
-        return res.status(200).json({
-            status: HTTP_STATUS_CODES.SUCCESS.OK,
-            message: 'comment saved',
-            data: '',
-            error: ''
-        });
-
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
-            data: '',
-            error: error.message
-        })
-    }
-}
-
-const UpdateTask = async (req, res) => {
-    try {
-
-        const { id, description, status, comments, dueDate } = req.body;
-
-        const validationObj = req.body;
-        const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
-
-        if (validation.fails()) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'validation failed',
-                data: '',
-                error: ''
-            })
-        }
-        const result = await Task.update({ status, description, comments, dueDate }, { where: { id } });
-
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
-
-        const tasks = await Task.findAll({ attributes: ['id', 'status', 'description', 'projectId', 'userId', 'dueDate'], where: { isActive: true } });
-
-        if (!tasks) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'tasks not found',
-                data: '',
-                error: ''
-            })
-        }
-
-        await client.zAdd('tasks', {
-            score: id,
-            value: `task:${id}`,
-        });
+        await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -198,12 +132,11 @@ const UpdateTask = async (req, res) => {
             message: '',
             data: '',
             error: error.message
-        })
+        });
     }
 }
 
 module.exports = {
     ListTasks,
-    UpdateTask,
-    Comment
+    UpdateTask
 }

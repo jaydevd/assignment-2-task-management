@@ -7,10 +7,6 @@ router.route('/list')
     .all(isUser)
     .get(ListTasks);
 
-router.route('/comment')
-    .all(isUser)
-    .post(Comment);
-
 router.route('/update')
     .all(isUser)
     .post(UpdateTask);

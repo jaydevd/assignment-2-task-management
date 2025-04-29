@@ -23,7 +23,10 @@ const UpdateProfile = async (req, res) => {
 
         const validationObj = req.body;
         let validation = new Validator(validationObj, {
-            name: VALIDATION_RULES.USER.name
+            name: VALIDATION_RULES.USER.NAME,
+            poneNumber: VALIDATION_RULES.USER.PHONE_NUMBER,
+            gender: VALIDATION_RULES.USER.GENDER,
+            address: VALIDATION_RULES.USER.ADDRESS
         });
 
         if (validation.fails()) {
@@ -38,15 +41,24 @@ const UpdateProfile = async (req, res) => {
         const updatedAt = new Date(Math.floor(Date.now() / 1000));
 
         const query = `
-        UPDATE users SET
-        name = '${name}',
-        phone_number = '${phoneNumber}',
-        gender = '${gender}',
-        joined_at = '${joinedAt}',
-        updated_at = '${updatedAt}',
-        updated_by = '${id}',
-        WHERE id = '${id}'
+        UPDATE users
+        SET 
         `;
+        const NAME = `name = '${name}'`;
+        const PHONE_NUMBER = `,phone_number = '${phoneNumber}'`;
+        const ADDRESS = `,address = '${address}'`;
+        const GENDER = `,gender = '${gender}'`;
+        const JOINED_AT = `,joined_at = '${joinedAt}'`;
+        const UPDATED = `, updated_at = '${updatedAt}', updated_by = '${id}'`;
+        const WHERE = ` WHERE id = '${id}'`;
+
+        if (name) query += NAME;
+        if (phoneNumber) query += PHONE_NUMBER;
+        if (address) query += ADDRESS;
+        if (gender) query += GENDER;
+        if (joinedAt) query += JOINED_AT;
+
+        query = query + UPDATED + WHERE;
 
         await sequelize.query(query);
 

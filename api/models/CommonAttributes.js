@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 
 const commonAttributes = {
     createdAt: {
-        type: DataTypes.DATE,
+        type: DataTypes.INTEGER,
         field: 'created_at'
     },
     createdBy: {
@@ -18,7 +18,7 @@ const commonAttributes = {
         field: 'is_deleted'
     },
     updatedAt: {
-        type: DataTypes.DATE,
+        type: DataTypes.INTEGER,
         field: 'updated_at',
         allowNull: true
     },

@@ -1,4 +1,4 @@
-const { STATUS, USER_POSITIONS, GENDER } = require('./constants');
+const { STATUS, USER_POSITIONS, GENDER, PROJECT_ROLES } = require('./constants');
 
 const COMMON_RULES = {
     ID: "required|string|max:60",
@@ -50,7 +50,8 @@ const VALIDATION_RULES = {
     PROJECT_MEMBERS: {
         ID: COMMON_RULES.ID,
         PROJECT_ID: COMMON_RULES.ID,
-        USER_ID: COMMON_RULES.ID
+        USER_ID: COMMON_RULES.ID,
+        ROLE: `required|string|in:${Object.values(PROJECT_ROLES).join(",")}`
     }
 }
 

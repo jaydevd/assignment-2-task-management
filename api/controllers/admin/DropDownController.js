@@ -17,14 +17,6 @@ const GetUsers = async (req, res) => {
         const query = `SELECT id, name FROM users;`;
         const [users, metadata] = await sequelize.query(query);
 
-        if (!users) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
-                data: '',
-                error: ''
-            });
-        }
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',

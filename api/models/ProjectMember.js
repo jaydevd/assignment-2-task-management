@@ -6,7 +6,11 @@ const { PROJECT_ROLES } = require("../config/constants");
 const ProjectMember = sequelize.define("ProjectMember", {
     id: {
         type: DataTypes.STRING(60),
-        primaryKey: true,
+        primaryKey: true
+    },
+    userId: {
+        field: 'user_id',
+        type: DataTypes.STRING(60),
         references: {
             key: 'id',
             model: 'users'

@@ -13,7 +13,7 @@ const { v4: uuidv4 } = require('uuid');
 const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { HTTP_STATUS_CODES } = require('../../../config/constants');
+const { HTTP_STATUS_CODES, FORGOT_PASSWORD_URL } = require('../../../config/constants');
 const { VALIDATION_RULES } = require('../../../config/validations');
 const { sequelize } = require('../../../config/database');
 
@@ -23,13 +23,21 @@ const SignUp = async (req, res) => {
         const { name, email, phoneNumber, position, address, password, gender, joinedAt } = req.body;
 
         const validationObj = req.body;
-        let validation = new Validator(validationObj, VALIDATION_RULES.USER);
+        const validation = new Validator(validationObj, {
+            name: VALIDATION_RULES.USER.NAME,
+            email: VALIDATION_RULES.USER.EMAIL,
+            password: VALIDATION_RULES.USER.PASSWORD,
+            position: VALIDATION_RULES.USER.POSITION,
+            address: VALIDATION_RULES.USER.ADDRESS,
+            gender: VALIDATION_RULES.USER.GENDER,
+            joinedAt: VALIDATION_RULES.USER.JOINED_AT,
+        });
 
         if (validation.fails()) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                data: '',
                 message: 'Validation failed',
+                data: '',
                 error: validation.errors.all()
             })
         }
@@ -53,8 +61,8 @@ const SignUp = async (req, res) => {
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
-            data: token,
             message: 'Sign up successful',
+            data: token,
             error: ''
         });
 
@@ -75,13 +83,16 @@ const LogIn = async (req, res) => {
         const { email, password } = req.body;
 
         const validationObj = req.body;
-        const validation = new Validator(validationObj, { email: VALIDATION_RULES.USER.email, password: VALIDATION_RULES.USER.password });
+        const validation = new Validator(validationObj, {
+            email: VALIDATION_RULES.USER.EMAIL,
+            password: VALIDATION_RULES.USER.PASSWORD
+        });
 
         if (validation.fails()) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                data: '',
                 message: 'Validation failed',
+                data: '',
                 error: validation.errors.all()
             })
         }
@@ -92,7 +103,7 @@ const LogIn = async (req, res) => {
         `;
         const [response, metadata] = await sequelize.query(query);
 
-        if (result.length() == 0) {
+        if (response == []) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: "User Not Found",
@@ -114,20 +125,10 @@ const LogIn = async (req, res) => {
             })
         }
 
-        const secretKey = process.env.SECRET_KEY;
+        const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY, { expiresIn: '1h' });
+        client.set("user", user.id);
 
-        const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: '1h' });
-
-        const result = await User.update({ token }, { where: { id: user.id } });
-
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: "token not saved",
-                data: "",
-                error: ""
-            });
-        }
+        await sequelize.query(`UPDATE users SET token = '${token}' WHERE id = '${user.id}'`);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -154,6 +155,8 @@ const LogOut = async (req, res) => {
         const query = `UPDATE users SET token = NULL WHERE id = '${id}'`;
         await sequelize.query(query);
 
+        client.del("user");
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'Logged out successfully',
@@ -173,8 +176,75 @@ const LogOut = async (req, res) => {
     }
 }
 
+const ForgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const token = jwt.sign({ email }, { expiresIn: '1hr' });
+
+        const query = `
+        UPDATE users SET token = '${token}' WHERE email = '${email}';
+        `;
+
+        await sequelize.query(query);
+        const URL = FORGOT_PASSWORD_URL.USER + `:${token}`;
+
+        SendPasswordResetMail(URL, email);
+
+        return res.status(200).json({
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
+            message: 'token generated',
+            data: '',
+            error: ''
+        })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
+            message: '',
+            data: '',
+            error: error.message
+        })
+    }
+}
+
+const ResetPassword = async (req, res) => {
+    try {
+        const { token, password } = req.body;
+
+        const hashedPassword = bcrypt.hash(password, 10);
+
+        const query = `
+        UPDATE users
+        SET password = '${hashedPassword}'
+        WHERE token = '${token}'
+        `;
+
+        await sequelize.query(query);
+
+        return res.status(200).json({
+            status: HTTP_STATUS_CODES.SUCCESS.OK,
+            message: 'password reset successfully',
+            data: '',
+            error: ''
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
+            message: '',
+            data: '',
+            error: error.message
+        })
+    }
+}
+
 module.exports = {
     SignUp,
     LogIn,
-    LogOut
+    LogOut,
+    ForgotPassword,
+    ResetPassword
 }

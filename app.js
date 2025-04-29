@@ -37,7 +37,7 @@ try {
     }));
 
     app.use('/', router);
-    // await bootstrap();
+    bootstrap();
 
     socket(io);
     startCronJobs();

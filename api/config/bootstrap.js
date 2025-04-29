@@ -11,7 +11,7 @@ module.exports.bootstrap = async () => {
         `
         const [admins, metadata] = await sequelize.query(query);
 
-        if (admins.length() != 0) return;
+        if (Object.keys(admins).length != 0) return;
 
         const id = uuidv4();
         const name = ADMIN.NAME;
@@ -19,17 +19,15 @@ module.exports.bootstrap = async () => {
         const password = process.env.ADMIN_PASSWORD;
         const hashedPassword = await bcrypt.hash(password, 10);
         const createdAt = Math.floor(Date.now() / 1000);
+        console.log(createdAt);
 
-        await Admin.create({
-            id,
-            name,
-            email,
-            password: hashedPassword,
-            createdAt,
-            createdBy: id,
-            isActive: true,
-            isDeleted: false
-        });
+        const INSERT = `
+        INSERT INTO admins
+            (id, name, email, password, created_at, created_by, is_active, is_deleted)
+        VALUES
+            ('${id}', '${name}', '${email}', '${hashedPassword}', '${createdAt}', '${id}', true, false)
+        `;
+        await sequelize.query(INSERT);
 
     } catch (error) {
         throw new Error(error);

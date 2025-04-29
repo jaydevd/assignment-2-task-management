@@ -18,6 +18,7 @@ const User = sequelize.define("User", {
         unique: true
     },
     phoneNumber: {
+        field: 'phone_number',
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -26,6 +27,7 @@ const User = sequelize.define("User", {
         allowNull: false
     },
     joinedAt: {
+        field: 'joined_at',
         type: DataTypes.DATE,
         allowNull: false
     },

@@ -3,9 +3,11 @@ const {
     ListProjects,
     CreateProject,
     UpdateProject,
-    DeleteProject
+    DeleteProject,
+    AddMember,
+    DeleteMember
 } = require('../../../controllers/admin/project/ProjectController');
-const { isAdmin } = require('./../../../middleware/isAdmin');
+const { isAdmin } = require('../../../middleware/isAdmin');
 
 const router = express.Router();
 
@@ -25,4 +27,11 @@ router.route('/delete')
     .all(isAdmin)
     .post(DeleteProject);
 
+router.route('/add-member')
+    .all(isAdmin)
+    .post(AddMember);
+
+router.route('/delete-member')
+    .all(isAdmin)
+    .post(DeleteMember);
 module.exports = { ProjectRoutes: router };

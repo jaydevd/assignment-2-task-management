@@ -16,4 +16,4 @@ router.route('/delete-user')
     .all(isAdmin)
     .get(DeleteUser);
 
-module.exports = { UsersRoutes: router };
+module.exports = { UserRoutes: router };

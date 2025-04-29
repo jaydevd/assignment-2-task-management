@@ -2,11 +2,10 @@ const express = require('express');
 const {
     AssignTask,
     UpdateTask,
-    Comment,
     DeleteTask,
     ListTasks
 } = require('../../../controllers/admin/task/TaskController');
-const { isAdmin } = require('./../../../middleware/isAdmin');
+const { isAdmin } = require('../../../middleware/isAdmin');
 
 const router = express.Router();
 
@@ -17,10 +16,6 @@ router.route('/list')
 router.route('/assign')
     .all(isAdmin)
     .post(AssignTask);
-
-router.route('/comment')
-    .all(isAdmin)
-    .post(Comment);
 
 router.route('/update')
     .all(isAdmin)
