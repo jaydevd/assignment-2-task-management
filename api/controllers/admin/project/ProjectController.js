@@ -13,7 +13,7 @@ const Validator = require("validatorjs");
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
-const client = require('../../../config/redis');
+const { Project } = require('../../../models');
 
 const ListProjects = async (req, res) => {
     try {
@@ -109,6 +109,8 @@ const CreateProject = async (req, res) => {
             })
         }
         const id = uuidv4();
+
+        await Project.create({ id, name, createdBy: adminID, createdAt, isActive: true, isDeleted: false });
 
         const query = `
         INSERT INTO projects

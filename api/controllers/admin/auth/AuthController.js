@@ -116,14 +116,10 @@ const ForgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
-        const token = jwt.sign({ email }, { expiresIn: '1hr' });
+        const token = uuidv4();
 
-        await A
-        const query = `
-        UPDATE admins SET token = '${token}' WHERE email = '${email}';
-        `;
+        await Admin.update({ token }, { where: { email } });
 
-        await sequelize.query(query);
         const URL = FORGOT_PASSWORD_URL.ADMIN + `/:${token}`;
 
         SendPasswordResetMail(URL, email);
@@ -152,13 +148,7 @@ const ResetPassword = async (req, res) => {
 
         const hashedPassword = bcrypt.hash(password, 10);
 
-        const query = `
-        UPDATE admins
-        SET password = '${hashedPassword}'
-        WHERE token = '${token}'
-        `;
-
-        await sequelize.query(query);
+        await Admin.update({ password: hashedPassword }, { where: { token } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

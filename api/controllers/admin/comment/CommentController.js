@@ -13,18 +13,21 @@ const Validator = require("validatorjs");
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
+const { Comment } = require('../../../models');
 
 const ListComments = async (req, res) => {
     try {
         const { taskId, comment, page, limit } = req.query;
         const skip = Number(page - 1) * limit;
 
+        const SELECT_COUNT = `SELECT COUNT(id) FROM comments`;
         const query = `
         SELECT id, comment, user_id, task_id FROM comments
         WHERE taskId = '${taskId}'
         `;
         const WHERE = ` AND comment = '%${comment}%'`;
         const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
+        const [total] = sequelize.query(SELECT_COUNT);
 
         if (comment) query += WHERE;
         query += LIMIT;
@@ -34,7 +37,7 @@ const ListComments = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: comments,
+            data: { total, comments },
             error: ''
         });
 
@@ -75,14 +78,16 @@ const AddComment = async (req, res) => {
 
         const createdAt = Math.floor(Date.now() / 1000);
 
-        const query = `
-        INSERT INTO comments
-            (id, task_id, comment, user_id, created_at, created_by, is_active, is_deleted)
-        VALUES
-            ('${id}', '${taskId}', '${comment}', '${userId}', '${createdAt}', '${createdBy}', true, false)
-        `;
+        const [result, metadata] = Comment.create({ id, taskId, comment, userId, createdAt, createdBy, isActive: true, isDeleted: false });
 
-        await sequelize.query(query);
+        if (!result) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: '',
+                data: '',
+                error: ''
+            })
+        }
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -121,17 +126,7 @@ const DeleteComment = async (req, res) => {
             })
         }
 
-        const query = `
-        UPDATE comments
-        SET
-        updated_at = '${updatedAt}',
-        updated_by = '${updatedBy}',
-        is_active = false,
-        is_deleted = true
-        WHERE id = '${id}'
-        `;
-
-        await sequelize.query(query);
+        await Comment.update({ isActive: false, isDeleted: true, updatedAt, updatedBy }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
