@@ -19,7 +19,8 @@ const USER_POSITIONS = {
     JR_SDE: "jr-sde",
     SR_SDE: "sr-sde",
     INTERN: "intern",
-    MANAGER: "manager"
+    MANAGER: "manager",
+    TESTER: "tester"
 }
 
 const PROJECT_ROLES = {

@@ -132,7 +132,7 @@ const LogIn = async (req, res) => {
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
-            data: { user, token },
+            data: token,
             message: '',
             error: ''
         });

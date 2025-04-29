@@ -28,11 +28,11 @@ const User = sequelize.define("User", {
     },
     joinedAt: {
         field: 'joined_at',
-        type: DataTypes.DATE,
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     position: {
-        type: DataTypes.ENUM(USER_POSITIONS.INTERN, USER_POSITIONS.JR_SDE, USER_POSITIONS.MANAGER, USER_POSITIONS.SR_SDE, USER_POSITIONS.TEAM_LEAD),
+        type: DataTypes.ENUM(USER_POSITIONS.INTERN, USER_POSITIONS.JR_SDE, USER_POSITIONS.MANAGER, USER_POSITIONS.SR_SDE, USER_POSITIONS.TEAM_LEAD, USER_POSITIONS.TESTER),
         allowNull: false
     },
     gender: {
