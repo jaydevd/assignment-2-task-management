@@ -18,11 +18,9 @@ const ListUsers = async (req, res) => {
         const { search, page, limit } = req.query;
         const skip = Number(page - 1) * limit;
 
-        const SELECT = `SELECT u.id, u.name, u.email FROM users u WHERE u.is_active = true`;
+        const query = `SELECT u.id, u.name, u.email FROM users u WHERE u.is_active = true`;
         const WHERE = ` (u.name ILIKE '%${search}%' OR u.email ILIKE '%${search}%')`;
         const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
-
-        let query = SELECT;
 
         if (search) query += WHERE;
         query += LIMIT;
@@ -61,6 +59,8 @@ const UpdateUser = async (req, res) => {
             joinedAt: VALIDATION_RULES.USER.JOINED_AT
         });
 
+        const joinedAtTP = +Date.parse(joinedAt);
+
         if (validation.fails()) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
@@ -78,7 +78,7 @@ const UpdateUser = async (req, res) => {
         const PHONE_NUMBER = `,phone_number = '${phoneNumber}'`;
         const ADDRESS = `,address = '${address}'`;
         const GENDER = `,gender = '${gender}'`;
-        const JOINED_AT = `,joined_at = '${joinedAt}'`;
+        const JOINED_AT = `,joined_at = '${joinedAtTP}'`;
         const POSITION = `,POSITION = '${position}`;
         const WHERE = ` WHERE id = '${id}'`;
 
@@ -96,7 +96,7 @@ const UpdateUser = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'user updated',
-            data: result,
+            data: '',
             error: ''
         });
 

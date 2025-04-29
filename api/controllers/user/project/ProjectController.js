@@ -11,7 +11,6 @@
 const Validator = require("validatorjs");
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
-const { VALIDATION_RULES } = require('../../../config/validations');
 
 const ListProjects = async (req, res) => {
     try {

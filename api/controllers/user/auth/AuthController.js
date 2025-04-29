@@ -8,7 +8,6 @@
  * @author Jaydev Dwivedi (Zignuts)
  */
 
-const { User } = require('../../../models/index');
 const { v4: uuidv4 } = require('uuid');
 const Validator = require('validatorjs');
 const bcrypt = require('bcrypt');
@@ -45,12 +44,13 @@ const SignUp = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const id = uuidv4();
         const createdAt = Math.floor(Date.now() / 1000);
+        const date = Math.floor(+Date.parse(joinedAt) / 1000);
 
         const query = `
         INSERT INTO users
             (id, name, email, phone_number, address, position, password, gender, joined_at, created_at, created_by, is_active, is_deleted)
         VALUES
-            ('${id}','${name}', '${email}', '${phoneNumber}', '${address}', '${position}', '${hashedPassword}', '${gender}', '${joinedAt}', '${createdAt}', '${id}', true, false)
+            ('${id}','${name}', '${email}', '${phoneNumber}', '${address}', '${position}', '${hashedPassword}', '${gender}', '${date}', '${createdAt}', '${id}', true, false)
         `;
 
         await sequelize.query(query);
@@ -103,7 +103,7 @@ const LogIn = async (req, res) => {
         `;
         const [response, metadata] = await sequelize.query(query);
 
-        if (response == []) {
+        if (response == {}) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: "User Not Found",
@@ -151,8 +151,10 @@ const LogIn = async (req, res) => {
 const LogOut = async (req, res) => {
     try {
         const user = req.user;
+        const updatedBy = user.id;
+        const updatedAt = Math.floor(Date.now() / 1000);
 
-        const query = `UPDATE users SET token = NULL WHERE id = '${id}'`;
+        const query = `UPDATE users SET token = NULL, updated_by = '${updatedBy}', updated_at = '${updatedAt}' WHERE id = '${id}'`;
         await sequelize.query(query);
 
         client.del("user");
@@ -187,7 +189,7 @@ const ForgotPassword = async (req, res) => {
         `;
 
         await sequelize.query(query);
-        const URL = FORGOT_PASSWORD_URL.USER + `:${token}`;
+        const URL = FORGOT_PASSWORD_URL.USER + `/:${token}`;
 
         SendPasswordResetMail(URL, email);
 

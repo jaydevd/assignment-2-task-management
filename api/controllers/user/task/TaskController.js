@@ -14,7 +14,6 @@ const { Task } = require('./../../../models/index');
 const { HTTP_STATUS_CODES, STATUS } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
-const client = require('../../../config/redis');
 
 const ListTasks = async (req, res) => {
     try {

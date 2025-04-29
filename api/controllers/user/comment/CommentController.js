@@ -21,7 +21,6 @@ const ListComments = async (req, res) => {
 
         const query = `
         SELECT id, comment, user_id, task_id FROM comments
-        LIMIT ${limit} OFFSET ${skip}
         `;
         const WHERE = ` WHERE comment = '%${comment}%'`;
         const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;

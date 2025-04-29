@@ -17,7 +17,7 @@ const { VALIDATION_RULES } = require('../../../config/validations');
 const ListTasks = async (req, res) => {
     try {
 
-        const { title, dueDate, page, status, userId, projectId, limit } = req.query;
+        const { title, page, status, userId, projectId, limit } = req.query;
         const skip = Number(page - 1) * limit;
 
         const validationObj = { title, dueDate, status };
@@ -50,12 +50,11 @@ const ListTasks = async (req, res) => {
         WHERE
         t.is_active = true AND
         t.user_id = '${userId}' AND
-        t.project_id = '${projectId} AND
-        t.due_date >= '${date}' AND t.due_date < '${date}'
+        t.project_id = '${projectId}' AND
+        t.due_date >= '${date}'
         `;
 
         const TITLE = ` AND t.title ILIKE '%${title}%'`;
-        const DUE_DATE = ` AND t.due_date <= '${dueDate}'`
         const STATUS = ` AND t.status = '${status}'`;
         const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
 
@@ -125,7 +124,7 @@ const AssignTask = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'task saved',
-            data: result.id,
+            data: '',
             error: ''
         });
 
@@ -192,10 +191,12 @@ const DeleteTask = async (req, res) => {
         const { id } = req.body;
         const admin = req.admin;
         const updatedBy = admin.id;
+        const updatedAt = Math.floor(Date.now() / 1000)
 
         const query = `
         UPDATE tasks
-        SET is_active = false, is_deleted = true, updated_at = '${Math.floor(Date.now() / 1000)}', updated_by = '${updatedBy}'
+        const updatedAt = Math.floor(Date.now() / 1000)
+        SET is_active = false, is_deleted = true, updated_at = '${updatedAt}', updated_by = '${updatedBy}'
         WHERE id = '${id}';
         `;
 

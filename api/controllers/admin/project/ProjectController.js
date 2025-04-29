@@ -111,7 +111,8 @@ const CreateProject = async (req, res) => {
         const id = uuidv4();
 
         const query = `
-        INSERT INTO projects (id, name, created_by, created_at, is_active, is_deleted)
+        INSERT INTO projects
+            (id, name, created_by, created_at, is_active, is_deleted)
         VALUES
             ('${id}', '${name}', '${adminID}', '${createdAt}', true, false)
         ;`;
