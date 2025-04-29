@@ -19,7 +19,6 @@ module.exports.bootstrap = async () => {
         const password = process.env.ADMIN_PASSWORD;
         const hashedPassword = await bcrypt.hash(password, 10);
         const createdAt = Math.floor(Date.now() / 1000);
-        console.log(createdAt);
 
         const INSERT = `
         INSERT INTO admins
