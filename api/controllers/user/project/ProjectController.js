@@ -8,7 +8,6 @@
  * @author Jaydev Dwivedi (Zignuts)
  */
 
-const Validator = require("validatorjs");
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { sequelize } = require('./../../../config/database');
 
@@ -46,7 +45,7 @@ const ListProjects = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: projects,
+            data: { projects, total },
             error: ''
         })
 
@@ -54,7 +53,7 @@ const ListProjects = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
         })

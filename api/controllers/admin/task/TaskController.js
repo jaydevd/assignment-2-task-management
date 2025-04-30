@@ -128,8 +128,8 @@ const UpdateTask = async (req, res) => {
             id: VALIDATION_RULES.TASK.ID,
             title: VALIDATION_RULES.TASK.TITLE,
             dueDate: VALIDATION_RULES.TASK.DUE_DATE,
-            // projectId: VALIDATION_RULES.TASK.PROJECT_ID,
-            // userId: VALIDATION_RULES.TASK.USER_ID,
+            projectId: VALIDATION_RULES.TASK.PROJECT_ID,
+            userId: VALIDATION_RULES.TASK.USER_ID,
             status: VALIDATION_RULES.TASK.STATUS
         });
 

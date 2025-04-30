@@ -81,8 +81,8 @@ const SignUp = async (req, res) => {
 
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
+            message: 'internal server error',
             data: '',
-            message: '',
             error: error.message
         })
     }
@@ -122,9 +122,9 @@ const LogIn = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: "Invalid Credentials",
+                message: "Password doesn't match",
                 data: "",
-                error: "Password doesn't match"
+                error: ""
             })
         }
 
@@ -135,8 +135,8 @@ const LogIn = async (req, res) => {
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
+            message: 'log in successful',
             data: token,
-            message: '',
             error: ''
         });
 
@@ -144,8 +144,8 @@ const LogIn = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
+            message: 'internal server error',
             data: '',
-            message: '',
             error: error.message
         });
     }
@@ -173,7 +173,7 @@ const LogOut = async (req, res) => {
 
         return res.status(500).json({
             status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
         })
@@ -228,7 +228,7 @@ const ForgotPassword = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
         })

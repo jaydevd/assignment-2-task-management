@@ -20,14 +20,13 @@ const ListTasks = async (req, res) => {
 
         const { title, page, userId, status, limit, projectId } = req.query;
 
-        // const validationObj = req.query;
-        const validationObj = { projectId };
+        const validationObj = req.query;
         const validation = new Validator(validationObj, {
-            // title: VALIDATION_RULES.TASK.TITLE,
-            // dueDate: VALIDATION_RULES.TASK.DUE_DATE,
+            title: VALIDATION_RULES.TASK.TITLE,
+            dueDate: VALIDATION_RULES.TASK.DUE_DATE,
             projectId: VALIDATION_RULES.TASK.PROJECT_ID,
-            // userId: VALIDATION_RULES.TASK.USER_ID,
-            // STATUS: VALIDATION_RULES.TASK.STATUS
+            userId: VALIDATION_RULES.TASK.USER_ID,
+            STATUS: VALIDATION_RULES.TASK.STATUS
         });
 
         if (validation.fails()) {
@@ -84,7 +83,7 @@ const ListTasks = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
         })
