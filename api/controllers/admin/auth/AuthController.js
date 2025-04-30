@@ -14,7 +14,6 @@ const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES, FORGOT_PASSWORD_URL } = require('../../../config/constants');
 const { VALIDATION_RULES } = require('../../../config/validations');
 const client = require("../../../config/redis");
-const { sequelize } = require("../../../config/database");
 const { SendPasswordResetMail } = require('../../../helpers/mail/ForgotPassword');
 const { Admin } = require('../../../models');
 
@@ -37,10 +36,9 @@ const LogIn = async (req, res) => {
             })
         }
 
-        const result = await Admin.findOne({ attributes: ['id', 'password'], where: { email } });
-        // console.log(result);
+        const admin = await Admin.findOne({ attributes: ['id', 'name', 'email', 'password'], where: { email } });
 
-        if (!result) {
+        if (!admin) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: "Admin Not Found",
@@ -64,14 +62,21 @@ const LogIn = async (req, res) => {
             id: admin.id,
         }, process.env.SECRET_KEY, { expiresIn: '1h' });
 
-        await sequelize.query(`UPDATE admins SET token = '${token}' WHERE id = '${admin.id}'`);
+        await Admin.update({ token }, { where: { id: admin.id } });
 
-        client.set("admin_id", admin.id);
+        client.set(`admin:${admin.id}`, JSON.stringify(admin));
+
+        const data = {
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            token
+        }
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: token,
+            data: data,
             error: ''
         });
 
@@ -90,8 +95,9 @@ const LogOut = async (req, res) => {
     try {
         const admin = req.admin;
         const id = admin.id;
+        const updatedAt = Math.floor(Date.now() / 1000);
 
-        await Admin.update({ token: null, updatedAt: Math.floor(Date.now() / 1000), updatedBy: id }, { where: { id } });
+        await Admin.update({ token: null, updatedAt, updatedBy: id }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -135,7 +141,7 @@ const ForgotPassword = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
         })
@@ -161,7 +167,7 @@ const ResetPassword = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
         })

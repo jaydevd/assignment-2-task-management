@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES } = require('../config/constants.js');
-const { sequelize } = require('../config/database.js');
+const { User } = require('../models/User.js');
 
 const isUser = async (req, res, next) => {
 
@@ -29,24 +29,9 @@ const isUser = async (req, res, next) => {
             })
         }
 
-        const query = `
-        SELECT id, token, is_active FROM users WHERE id = ${payload.id}
-        `;
+        const user = await User.findOne({ attributes: ['id', 'token', 'isActive'], where: { id: payload.id } });
 
-        const [users, metadata] = sequelize.query(query);
-
-        if (users.length() == 0) {
-            return res.status(401).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-                message: 'No user found',
-                data: '',
-                error: ''
-            });
-        }
-
-        const user = users[0];
-
-        if (!user.is_active) {
+        if (!user.isActive) {
             return res.status(401).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
                 message: 'User not active',
@@ -71,7 +56,7 @@ const isUser = async (req, res, next) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
             ,

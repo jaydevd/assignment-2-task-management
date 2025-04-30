@@ -14,27 +14,40 @@ const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
 const { Project, ProjectMember } = require('../../../models');
+const { Op } = require('sequelize');
 
 const ListProjects = async (req, res) => {
     try {
         const { page, name, limit } = req.query;
-        const skip = Number(page - 1) * limit;
+        const offset = Number(page - 1) * limit;
 
-        let query = `SELECT id, name, members FROM projects`;
-        const WHERE = ` WHERE name ILIKE '%${name}%'`;
-        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
+        let selectClauseCount = `SELECT COUNT(p.id)`;
+        let selectClause = `SELECT p.id, p.name, COUNT(pm.id) as total_members, p.is_active, p.is_deleted`;
+        const fromClause = `\n FROM projects p JOIN project_members pm ON p.id = pm.project_id`;
+        const groupByClause = `\n GROUP BY p.id, pm.id`
+        let whereClause = ``;
+        const paginationClause = `\n LIMIT ${limit} OFFSET ${offset} `;
 
-        if (name) {
-            query += WHERE;
-        }
+        if (name) whereClause = whereClause.concat(`\n WHERE p.name = '${name}'`);
 
-        query += LIMIT;
-        const projects = await sequelize.query(query);
+        selectClause = selectClause
+            .concat(fromClause)
+            .concat(groupByClause)
+            .concat(whereClause)
+            .concat(paginationClause);
+
+        selectClauseCount = selectClauseCount
+            .concat(fromClause)
+            .concat(groupByClause)
+            .concat(whereClause);
+
+        const [projects, metadata] = await sequelize.query(selectClause);
+        const [total] = await sequelize.query(selectClauseCount);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: projects,
+            data: { projects, total },
             error: ''
         });
 
@@ -52,28 +65,32 @@ const ListProjects = async (req, res) => {
 const ListMembers = async (req, res) => {
     try {
         const { search, projectId, limit, page } = req.query;
-        const skip = Number(page - 1) * limit;
+        const offset = Number(page - 1) * limit;
 
-        const query = `
-        SELECT pm.id, u.name, u.email, pm.role FROM project_members pm
-        JOIN users u
-        ON pm.user_id = u.id
-        WHERE pm.project_id = '${projectId}'
-        AND pm.is_active = true
-        `;
+        let selectClauseCount = `SELECT COUNT(p.id)`;
+        let selectClause = `SELECT p.id, u.name, p.role, u.email`;
+        const fromClause = `\n FROM project_members p JOIN users u ON p.user_id = u.id`;
+        let whereClause = `\n WHERE project_id = '${projectId}'`;
+        const paginationClause = `\n LIMIT ${limit} OFFSET ${offset} `;
 
-        const WHERE = ` AND u.name ILIKE '${search}' OR u.email ILIKE '${search}'`;
-        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
+        if (search) whereClause = whereClause.concat(`\n WHERE name ILIKE '%${search}%'`);
 
-        if (search) query += WHERE
-        query += LIMIT;
+        selectClause = selectClause
+            .concat(fromClause)
+            .concat(whereClause)
+            .concat(paginationClause);
 
-        const [members, metadata] = await sequelize.query(query);
+        selectClauseCount = selectClauseCount
+            .concat(fromClause)
+            .concat(whereClause);
+
+        const [members, metadata] = await sequelize.query(selectClause);
+        const [total] = await sequelize.query(selectClauseCount);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: members,
+            data: { members, total },
             error: ''
         });
 
@@ -93,12 +110,12 @@ const CreateProject = async (req, res) => {
 
         const { name } = req.body;
         const admin = req.admin;
-        const adminID = admin.id;
+        const createdBy = admin.id;
         const createdAt = Math.floor(Date.now() / 1000);
 
-        const validationObj = { name, members };
+        const validationObj = { name };
         const validation = new Validator(validationObj, {
-            name: VALIDATION_RULES.PROJECT.NAME,
+            name: VALIDATION_RULES.PROJECT.NAME
         });
 
         if (validation.fails()) {
@@ -111,7 +128,7 @@ const CreateProject = async (req, res) => {
         }
         const id = uuidv4();
 
-        await Project.create({ id, name, createdBy: adminID, createdAt, isActive: true, isDeleted: false });
+        await Project.create({ id, name, createdBy, createdAt, isActive: true, isDeleted: false });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -153,10 +170,10 @@ const AddMember = async (req, res) => {
 
         const id = uuidv4();
         const admin = req.admin;
-        const adminId = admin.id;
+        const createdBy = admin.id;
         const createdAt = Math.floor(Date.now() / 1000);
 
-        await ProjectMember.create({ id, userId, projectId, role, createdBy: adminId, createdAt, isActive: true, isDeleted: false });
+        await ProjectMember.create({ id, userId, projectId, role, createdBy, createdAt, isActive: true, isDeleted: false });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -220,7 +237,7 @@ const DeleteMember = async (req, res) => {
 
 const UpdateProject = async (req, res) => {
     try {
-        const { id, name } = req.body;
+        const { id, name, members } = req.body;
         const admin = req.admin;
         const updatedBy = admin.id;
 
@@ -242,6 +259,7 @@ const UpdateProject = async (req, res) => {
         const updatedAt = Math.floor(Date.now() / 1000);
 
         await Project.update({ name, updatedAt, updatedBy }, { where: { id } });
+        await ProjectMember.update({ projectId: id }, { where: { id: { [Op.in]: members } } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -284,6 +302,7 @@ const DeleteProject = async (req, res) => {
         const updatedAt = Math.floor(Date.now() / 1000);
 
         await Project.update({ isActive: false, isDeleted: true, updatedAt, updatedBy }, { where: { id } });
+        await ProjectMember.update({ isActive: false, isDeleted: true }, { where: { projectId: id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

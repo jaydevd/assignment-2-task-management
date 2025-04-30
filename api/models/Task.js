@@ -23,7 +23,7 @@ const Task = sequelize.define("Task", {
     },
     dueDate: {
         field: 'due_date',
-        type: DataTypes.DATE,
+        type: DataTypes.INTEGER,
     },
     status: {
         type: DataTypes.ENUM(STATUS.TO_DO, STATUS.CANCELLED, STATUS.POSTPONED, STATUS.PENDING, STATUS.DONE, STATUS.IN_PROGRESS, STATUS.IN_REVIEW, STATUS.ON_HOLD)

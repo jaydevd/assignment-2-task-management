@@ -18,61 +18,40 @@ const { Task } = require('../../../models');
 const ListTasks = async (req, res) => {
     try {
 
-        const { title, page, status, userId, projectId, limit } = req.query;
-        const skip = Number(page - 1) * limit;
+        const { title, page, status, userId, limit, dueDate } = req.query;
 
-        const validationObj = { title, dueDate, status };
-        const validation = new Validator(validationObj, {
-            title: VALIDATION_RULES.TASK.TITLE,
-            dueDate: VALIDATION_RULES.TASK.DUE_DATE,
-            status: VALIDATION_RULES.TASK.STATUS,
-            userId: VALIDATION_RULES.TASK.USER_ID,
-            projectId: VALIDATION_RULES.TASK.PROJECT_ID
-        });
+        const date = Math.floor(+Date.parse(dueDate) / 1000);
 
-        if (validation.fails()) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: 'validation failed',
-                data: '',
-                error: validation.errors.all()
-            })
-        }
+        let selectClauseCount = `SELECT count(id)`;
+        let selectClause = `SELECT t.id, t.title, t.status, t.due_date, t.is_active`;
+        const fromClause = `\n FROM tasks t`;
+        let whereClause = ``;
 
-        const date = Math.floor(Date.now() / 1000);
+        if (title) whereClause = whereClause.concat(`\n AND t.title ILIKE '%${title}%'`);
+        if (status) whereClause = whereClause.concat(`\n AND t.status = '${status}'`);
+        if (dueDate) whereClause = whereClause.concat(`\n AND t.due_date = '${date}'`);
+        if (userId) whereClause = whereClause.concat(`\n AND t.user_id = '${userId}'`);
 
-        const SELECT = `
-        SELECT t.id, t.title, t.status, t.user_id, t.due_date, t.created_at, u.name as user, p.name as project
-        FROM tasks t
-        JOIN users u
-        ON t.user_id = u.id
-        JOIN projects p
-        ON t.project_id = p.id
-        WHERE
-        t.is_active = true AND
-        t.user_id = '${userId}' AND
-        t.project_id = '${projectId}' AND
-        t.due_date >= '${date}'
-        `;
-        // const FROM = `FROM tasks t`;
+        const offset = Number(page - 1) * limit;
 
-        const query = SELECT;
+        const paginationClause = `\n LIMIT ${limit} OFFSET ${offset}`;
 
-        const TITLE = ` AND t.title ILIKE '%${title}%'`;
-        const STATUS = ` AND t.status = '${status}'`;
-        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
+        selectClause = selectClause
+            .concat(fromClause)
+            .concat(whereClause)
+            .concat(paginationClause);
 
-        if (title) query += TITLE;
-        if (status) query += STATUS;
+        selectClauseCount = selectClauseCount
+            .concat(fromClause)
+            .concat(whereClause)
 
-        query += LIMIT;
-
-        const [tasks, metadata] = await sequelize.query(query);
+        const [tasks] = await sequelize.query(selectClause);
+        const [total] = await sequelize.query(selectClauseCount);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: tasks,
+            data: { tasks, total },
             error: ''
         })
 

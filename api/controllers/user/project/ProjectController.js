@@ -17,23 +17,31 @@ const ListProjects = async (req, res) => {
         const user = req.user;
         const id = user.id;
 
-        const { search, page, limit } = req.query;
+        const { name, page, limit } = req.query;
+        const offset = Number(page - 1) * limit;
 
-        const skip = Number(page - 1) * limit;
+        let selectClauseCount = `SELECT COUNT(p.id)`;
+        let selectClause = `SELECT p.id, p.name`;
+        const fromClause = `\n FROM projects p JOIN project_members pm ON p.id = pm.project_id`;
+        const groupByClause = `\n GROUP BY p.id`
+        let whereClause = ` WHERE p.is_active = true AND pm.is_active = true AND pm.user_id = '${id}'`;
+        const paginationClause = `\n LIMIT ${limit} OFFSET ${offset} `;
 
-        const query = `SELECT p.id, p.name FROM projects p
-        JOIN project_members pm
-        ON p.id = pm.project_id
-        WHERE pm.id = '${id}'
-        `;
+        if (name) whereClause = whereClause.concat(`\n WHERE p.name = '${name}'`);
 
-        const WHERE = ` AND p.name ILIKE '%${search}`;
-        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
+        selectClause = selectClause
+            .concat(fromClause)
+            .concat(groupByClause)
+            .concat(whereClause)
+            .concat(paginationClause);
 
-        if (search) query += WHERE;
-        query += LIMIT;
+        selectClauseCount = selectClauseCount
+            .concat(fromClause)
+            .concat(groupByClause)
+            .concat(whereClause);
 
-        const [projects, metadata] = await sequelize.query(query);
+        const [projects, metadata] = await sequelize.query(selectClause);
+        const [total] = await sequelize.query(selectClauseCount);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

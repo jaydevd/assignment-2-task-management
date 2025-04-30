@@ -15,22 +15,36 @@ const { VALIDATION_RULES } = require('../../../config/validations');
 
 const ListUsers = async (req, res) => {
     try {
-        const { search, page, limit } = req.query;
-        const skip = Number(page - 1) * limit;
+        const { search, page, limit, gender } = req.query;
 
-        const query = `SELECT u.id, u.name, u.email FROM users u WHERE u.is_active = true`;
-        const WHERE = ` (u.name ILIKE '%${search}%' OR u.email ILIKE '%${search}%')`;
-        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
+        let selectClauseCount = `SELECT count(id)`;
+        let selectClause = `SELECT id, name, email, phone_number, address, position, is_active`;
+        const fromClause = `\n FROM users`;
+        let whereClause = ``;
 
-        if (search) query += WHERE;
-        query += LIMIT;
+        if (search) whereClause = whereClause.concat(`\n AND (name ILIKE '%${search}%' OR email ILIKE '%${search}%' OR phone_number ILIKE '%${search}%')`);
+        if (gender) whereClause = whereClause.concat(`\n AND (gender ILIKE '%${gender}%'`);
 
-        const [users, metadata] = await sequelize.query(query);
+        const offset = Number(page - 1) * limit;
+
+        const paginationClause = `\n LIMIT ${limit} OFFSET ${offset}`;
+
+        selectClause = selectClause
+            .concat(fromClause)
+            .concat(whereClause)
+            .concat(paginationClause);
+
+        selectClauseCount = selectClauseCount
+            .concat(fromClause)
+            .concat(whereClause)
+
+        const [users] = await sequelize.query(selectClause);
+        const [total] = await sequelize.query(selectClauseCount);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: users,
+            data: { users, total },
             error: ''
         });
 
@@ -59,7 +73,7 @@ const UpdateUser = async (req, res) => {
             joinedAt: VALIDATION_RULES.USER.JOINED_AT
         });
 
-        joinedAt = +Date.parse(joinedAt);
+        const JOINED_AT = +Date.parse(joinedAt);
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -70,7 +84,7 @@ const UpdateUser = async (req, res) => {
             })
         }
 
-        await User.update({ name, phoneNumber, position, address, gender, joinedAt }, { where: { id } });
+        await User.update({ name, phoneNumber, position, address, gender, joinedAt: JOINED_AT }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

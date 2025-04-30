@@ -20,8 +20,7 @@ const ListTasks = async (req, res) => {
         const user = req.user;
         const id = user.id;
 
-        const { title, dueDate, page, projectId, userId, status, limit } = req.query;
-        const skip = Number(page - 1) * limit;
+        const { title, page, userId, status, limit } = req.query;
 
         const validationObj = req.query;
         const validation = new Validator(validationObj, {
@@ -41,36 +40,42 @@ const ListTasks = async (req, res) => {
             })
         }
 
-        const query = `
-        SELECT t.id, t.title, t.status, t.due_date, t.user_id, t.created_at, u.name, p.name
-        FROM tasks t
-        JOIN users u
-        ON t.user_id = u.id
-        JOIN projects p
-        ON t.project_id = p.id
-        WHERE due_date >= '${date}'
-        `;
+        const dueDateISO = new Date().slice(0, 10);
+        const dueDate = Math.floor(+Date.parse(dueDateISO) / 1000);
 
-        const TITLE = ` AND t.title ILIKE '%${title}%'`;
-        const DUE_DATE = ` AND t.due_date < '${dueDate}'`;
-        const STATUS = ` AND t.status < '${status}`;
-        const PROJECT = ` AND t.project_id = '${projectId}'`;
-        const USER = ` AND t.user_id = '${userId}'`;
-        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
+        const selectClauseCount = `SELECT count(id)`;
+        const selectClause = `SELECT t.id, t.title, t.status, t.due_date`;
+        const fromClause = `\n FROM tasks t`;
 
-        if (title) query += TITLE;
-        if (dueDate) query += DUE_DATE;
-        if (status) query += STATUS;
-        if (projectId) query += PROJECT;
-        if (userId) query += USER;
-        query += LIMIT;
+        const whereClause = `\n WHERE
+                t.is_active = true
+                AND t.user_id = '${userId}'
+                AND t.due_date >= '${dueDate}'`
+            ;
 
-        const [tasks, metadata] = await sequelize.query(query);
+        if (title) whereClause.concat(`\n AND t.title ILIKE '%${title}%'`);
+        if (status) whereClause.concat(`\n AND t.status = '${status}'`);
+
+        const offset = Number(page - 1) * limit;
+
+        const paginationClause = `\n LIMIT ${limit} OFFSET ${offset}`;
+
+        selectClause
+            .concat(fromClause)
+            .concat(whereClause)
+            .concat(paginationClause);
+
+        selectClauseCount
+            .concat(fromClause)
+            .concat(whereClause)
+
+        const [tasks, metadata] = await sequelize.query(selectClause);
+        const [total] = await sequelize.query(selectClauseCount);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: tasks,
+            data: { tasks, total },
             error: ''
         });
 

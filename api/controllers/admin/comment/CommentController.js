@@ -18,22 +18,27 @@ const { Comment } = require('../../../models');
 const ListComments = async (req, res) => {
     try {
         const { taskId, comment, page, limit } = req.query;
-        const skip = Number(page - 1) * limit;
+        const offset = Number(page - 1) * limit;
 
-        const SELECT_COUNT = `SELECT COUNT(id) FROM comments`;
-        const query = `
-        SELECT id, comment, user_id, task_id FROM comments
-        WHERE taskId = '${taskId}' AND
-        is_active = true
-        `;
-        const WHERE = ` AND comment = '%${comment}%'`;
-        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
-        const [total] = sequelize.query(SELECT_COUNT);
+        const selectClauseCount = `SELECT COUNT(id)`;
+        const selectClause = `SELECT id, comment, user_id, task_id, is_active, is_deleted`;
+        const fromClause = `\n FROM comments`;
+        const whereClause = `\n WHERE taskId = '${taskId}'`;
+        const paginationClause = ` LIMIT ${limit} OFFSET ${offset} `;
 
-        if (comment) query += WHERE;
-        query += LIMIT;
+        if (comment) whereClause.concat(`\n AND comment = '${comment}'`);
 
-        const [comments, metadata] = await sequelize.query(query);
+        selectClause
+            .concat(fromClause)
+            .concat(whereClause)
+            .concat(paginationClause);
+
+        selectClauseCount
+            .concat(fromClause)
+            .concat(whereClause);
+
+        const [comments, metadata] = await sequelize.query(selectClause);
+        const [total] = await sequelize.query(selectClauseCount);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -81,15 +86,6 @@ const AddComment = async (req, res) => {
 
         await Comment.create({ id, taskId, comment, userId, createdAt, createdBy, isActive: true, isDeleted: false });
 
-        if (!result) {
-            return res.status(400).json({
-                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                message: '',
-                data: '',
-                error: ''
-            })
-        }
-
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'comment saved',
@@ -101,7 +97,7 @@ const AddComment = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
         });
@@ -111,6 +107,8 @@ const AddComment = async (req, res) => {
 const DeleteComment = async (req, res) => {
     try {
         const { id } = req.body;
+        const admin = req.admin;
+        const updatedBy = admin.id;
 
         const validationObj = req.body;
 
@@ -140,7 +138,7 @@ const DeleteComment = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
         })

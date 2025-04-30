@@ -17,23 +17,32 @@ const { VALIDATION_RULES } = require('../../../config/validations');
 const ListComments = async (req, res) => {
     try {
         const { comment, page, limit } = req.query;
-        const skip = Number(page - 1) * limit;
+        const offset = Number(page - 1) * limit;
 
-        const query = `
-        SELECT id, comment, user_id, task_id FROM comments
-        `;
-        const WHERE = ` WHERE comment = '%${comment}%'`;
-        const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
+        const selectClauseCount = `SELECT COUNT(id)`;
+        const selectClause = `SELECT id, comment, user_id, task_id, is_active, is_deleted`;
+        const fromClause = `\n FROM comments`;
+        const whereClause = `\n WHERE taskId = '${taskId}'`;
+        const paginationClause = ` LIMIT ${limit} OFFSET ${offset} `;
 
-        if (comment) query += WHERE;
-        query += LIMIT;
+        if (comment) whereClause.concat(`\n AND comment = '${comment}'`);
 
-        const [comments, metadata] = await sequelize.query(query);
+        selectClause
+            .concat(fromClause)
+            .concat(whereClause)
+            .concat(paginationClause);
+
+        selectClauseCount
+            .concat(fromClause)
+            .concat(whereClause);
+
+        const [comments, metadata] = await sequelize.query(selectClause);
+        const [total] = await sequelize.query(selectClauseCount);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: comments,
+            data: { comments, total },
             error: ''
         });
 

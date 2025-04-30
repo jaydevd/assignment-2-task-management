@@ -5,7 +5,8 @@ const {
     UpdateProject,
     DeleteProject,
     AddMember,
-    DeleteMember
+    DeleteMember,
+    ListMembers
 } = require('../../../controllers/admin/project/ProjectController');
 const { isAdmin } = require('../../../middleware/isAdmin');
 
@@ -26,6 +27,10 @@ router.route('/update')
 router.route('/delete')
     .all(isAdmin)
     .post(DeleteProject);
+
+router.route('/list-members')
+    .all(isAdmin)
+    .get(ListMembers);
 
 router.route('/add-member')
     .all(isAdmin)

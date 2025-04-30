@@ -45,7 +45,7 @@ const SignUp = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const id = uuidv4();
         const createdAt = Math.floor(Date.now() / 1000);
-        joinedAt = Math.floor(+Date.parse(joinedAt) / 1000);
+        const JOINED_AT = Math.floor(+Date.parse(joinedAt) / 1000);
 
         await User.create({
             id,
@@ -56,7 +56,7 @@ const SignUp = async (req, res) => {
             position,
             password: hashedPassword,
             gender,
-            joinedAt,
+            joinedAt: JOINED_AT,
             createdAt,
             createdBy,
             isActive: true,
@@ -65,7 +65,7 @@ const SignUp = async (req, res) => {
 
         const token = jwt.sign({ id }, process.env.SECRET_KEY, { expiresIn: '1h' });
 
-        await sequelize.query(`UPDATE users SET token = '${token}' WHERE id = '${id}'`);
+        await User.update({ token }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -105,7 +105,7 @@ const LogIn = async (req, res) => {
             })
         }
 
-        const user = await User.findOne({ id, name, email, password, position, password, token, gender, joinedAt }, { where: { isActive: true } });
+        const user = await User.findOne({ id, name, email, password, position, password, token, gender, joinedAt }, { where: { email, isActive: true } });
         if (!user) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,

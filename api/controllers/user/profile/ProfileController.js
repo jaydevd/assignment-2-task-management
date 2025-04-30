@@ -12,7 +12,6 @@ const { User } = require('./../../../models/index');
 const Validator = require('validatorjs');
 const { HTTP_STATUS_CODES } = require('./../../../config/constants');
 const { VALIDATION_RULES } = require('../../../config/validations');
-const { sequelize } = require('../../../config/database');
 
 const UpdateProfile = async (req, res) => {
 
@@ -32,40 +31,21 @@ const UpdateProfile = async (req, res) => {
         if (validation.fails()) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
-                data: '',
                 message: 'validation failed',
+                data: '',
                 error: validation.errors.all()
             })
         }
 
         const updatedAt = new Date(Math.floor(Date.now() / 1000));
+        const JOINED_AT = Math.floor(+Date.parse(joinedAt) / 1000);
 
-        const query = `
-        UPDATE users
-        SET 
-        `;
-        const NAME = `name = '${name}'`;
-        const PHONE_NUMBER = `,phone_number = '${phoneNumber}'`;
-        const ADDRESS = `,address = '${address}'`;
-        const GENDER = `,gender = '${gender}'`;
-        const JOINED_AT = `,joined_at = '${joinedAt}'`;
-        const UPDATED = `, updated_at = '${updatedAt}', updated_by = '${id}'`;
-        const WHERE = ` WHERE id = '${id}'`;
-
-        if (name) query += NAME;
-        if (phoneNumber) query += PHONE_NUMBER;
-        if (address) query += ADDRESS;
-        if (gender) query += GENDER;
-        if (joinedAt) query += JOINED_AT;
-
-        query = query + UPDATED + WHERE;
-
-        await sequelize.query(query);
+        await User.update({ name, phoneNumber, address, gender, joinedAt: JOINED_AT, updatedAt, updatedBy: id }, { where: { id, isActive: true } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
+            message: 'Data saved Successfully',
             data: result.id,
-            message: 'Data Created Successfully',
             error: ''
         })
 
@@ -74,8 +54,8 @@ const UpdateProfile = async (req, res) => {
 
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            data: '',
             message: '',
+            data: '',
             error: error.message
         })
     }

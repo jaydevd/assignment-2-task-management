@@ -8,7 +8,7 @@ const isAdmin = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    console.log("token from isAdmin: ", token);
+    // console.log("token from isAdmin: ", token);
 
     if (!token) {
       return res.status(400).json({
@@ -31,25 +31,10 @@ const isAdmin = async (req, res, next) => {
       })
     }
 
-    const query = `
-    SELECT id, token, is_active FROM admins WHERE id = ${payload.id}
-    `;
+    const admin = await Admin.findOne({ attributes: ['id', 'token', 'isActive'], where: { id: payload.id } });
 
-    const [admins, metadata] = sequelize.query(query);
-
-    if (admins.length() == 0) {
-      return res.status(401).json({
-        status: HTTP_STATUS_CODES.CLIENT_ERROR.UNAUTHORIZED,
-        message: 'No user found',
-        data: '',
-        error: ''
-      });
-    }
-
-    const admin = admin[0];
-
-    if (!admin.is_active) {
-      console.log("admin active? ", admin.is_active);
+    if (!admin.isActive) {
+      console.log("admin active? ", admin.isActive);
       return res.status(403).json({
         status: HTTP_STATUS_CODES.CLIENT_ERROR.FORBIDDEN,
         message: 'Admin is not active',

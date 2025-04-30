@@ -79,7 +79,6 @@ const FORGOT_PASSWORD_URL = {
 module.exports = {
     STATUS,
     HTTP_STATUS_CODES,
-    ADMIN,
     USER_POSITIONS,
     SMTP,
     SOCKET_EVENTS,
