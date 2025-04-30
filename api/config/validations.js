@@ -47,7 +47,7 @@ const VALIDATION_RULES = {
         COMMENT: "required|string|max:200",
         USER_ID: COMMON_RULES.ID
     },
-    PROJECT_MEMBERS: {
+    PROJECT_MEMBER: {
         ID: COMMON_RULES.ID,
         PROJECT_ID: COMMON_RULES.ID,
         USER_ID: COMMON_RULES.ID,

@@ -86,5 +86,6 @@ module.exports = {
     NOTIFICATION,
     REDIS,
     PROJECT_ROLES,
-    GENDER
+    GENDER,
+    FORGOT_PASSWORD_URL
 }

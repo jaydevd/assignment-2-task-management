@@ -16,6 +16,8 @@ const { HTTP_STATUS_CODES, FORGOT_PASSWORD_URL } = require('../../../config/cons
 const { VALIDATION_RULES } = require('../../../config/validations');
 const { sequelize } = require('../../../config/database');
 const { User } = require('../../../models');
+const client = require('../../../config/redis');
+const { SendPasswordResetMail } = require('../../../helpers/mail/ForgotPassword');
 
 const SignUp = async (req, res) => {
 
@@ -105,7 +107,7 @@ const LogIn = async (req, res) => {
             })
         }
 
-        const user = await User.findOne({ id, name, email, password, position, password, token, gender, joinedAt }, { where: { email, isActive: true } });
+        const user = await User.findOne({ attributes: ['id', 'name', 'email', 'password', 'position', 'password', 'token', 'gender', 'joinedAt'] }, { where: { email, isActive: true } });
         if (!user) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
@@ -113,7 +115,7 @@ const LogIn = async (req, res) => {
                 data: "",
                 error: ""
             });
-        } s
+        }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
@@ -127,9 +129,9 @@ const LogIn = async (req, res) => {
         }
 
         const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY, { expiresIn: '1h' });
-        client.set(`user:${id}`, user);
+        client.set(`user:${user.id}`, JSON.stringify(user));
 
-        await sequelize.query(`UPDATE users SET token = '${token}' WHERE id = '${user.id}'`);
+        await User.update({ token }, { where: { id: user.id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -196,11 +198,21 @@ const ForgotPassword = async (req, res) => {
             })
         }
 
-        const token = jwt.sign({ email }, { expiresIn: '1h' });
+        const user = await User.findOne({ attributes: ['email'], where: { email } });
+
+        if (!user) {
+            return res.status(403).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.FORBIDDEN,
+                message: 'user not found',
+                data: '',
+                error: ''
+            })
+        }
+
+        const token = uuidv4();
 
         await User.update({ token }, { where: { email } });
 
-        await sequelize.query(query);
         const URL = FORGOT_PASSWORD_URL.USER + `/:${token}`;
 
         SendPasswordResetMail(URL, email);
@@ -208,7 +220,7 @@ const ForgotPassword = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'token generated',
-            data: '',
+            data: URL,
             error: ''
         })
 
@@ -225,18 +237,25 @@ const ForgotPassword = async (req, res) => {
 
 const ResetPassword = async (req, res) => {
     try {
-        const { token, password } = req.body;
+        const { token } = req.params;
+        const { password } = req.body;
 
-        const hashedPassword = bcrypt.hash(password, 10);
+        const user = await User.findOne({ attributes: ['id', 'token'] }, { where: { token } });
 
-        const query = `
-        UPDATE users
-        SET password = '${hashedPassword}'
-        WHERE token = '${token}'
-        `;
+        if (!user) {
+            return res.status(403).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.FORBIDDEN,
+                message: 'user not found',
+                data: '',
+                error: ''
+            })
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        await sequelize.query(query);
-        await User.update({ password: hashedPassword }, { where: { token } });
+        const updatedAt = Math.floor(Date.now() / 1000);
+        const updatedBy = user.id;
+
+        await User.update({ password: hashedPassword, updatedAt, updatedBy, token: null }, { where: { id: user.id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -249,7 +268,7 @@ const ResetPassword = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             status: HTTP_STATUS_CODES.SERVER_ERROR.INTERNAL_SERVER_ERROR,
-            message: '',
+            message: 'internal server error',
             data: '',
             error: error.message
         })

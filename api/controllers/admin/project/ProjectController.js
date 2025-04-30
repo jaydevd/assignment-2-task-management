@@ -259,7 +259,10 @@ const UpdateProject = async (req, res) => {
         const updatedAt = Math.floor(Date.now() / 1000);
 
         await Project.update({ name, updatedAt, updatedBy }, { where: { id } });
-        await ProjectMember.update({ projectId: id }, { where: { id: { [Op.in]: members } } });
+
+        if (members) {
+            await ProjectMember.update({ projectId: id }, { where: { id: { [Op.in]: members } } });
+        }
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

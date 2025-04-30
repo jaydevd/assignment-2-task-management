@@ -93,8 +93,9 @@ const AssignTask = async (req, res) => {
 
         const id = uuidv4();
         const createdAt = Math.floor(Date.now() / 1000);
+        const date = Math.floor(+Date.parse(dueDate) / 1000);
 
-        await Task.create({ id, title, dueDate, status, userId, projectId, createdAt, createdBy, isActive: true, isDeleted: false });
+        await Task.create({ id, title, dueDate: date, status, userId, projectId, createdAt, createdBy, isActive: true, isDeleted: false });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -127,8 +128,8 @@ const UpdateTask = async (req, res) => {
             id: VALIDATION_RULES.TASK.ID,
             title: VALIDATION_RULES.TASK.TITLE,
             dueDate: VALIDATION_RULES.TASK.DUE_DATE,
-            projectId: VALIDATION_RULES.TASK.PROJECT_ID,
-            userId: VALIDATION_RULES.TASK.USER_ID,
+            // projectId: VALIDATION_RULES.TASK.PROJECT_ID,
+            // userId: VALIDATION_RULES.TASK.USER_ID,
             status: VALIDATION_RULES.TASK.STATUS
         });
 
@@ -142,8 +143,9 @@ const UpdateTask = async (req, res) => {
         }
 
         const updatedAt = Math.floor(Date.now() / 1000);
+        const DUE_DATE = Math.floor(+Date.parse(dueDate) / 1000);
 
-        await Task.update({ status, title, dueDate, projectId, userId, updatedAt, updatedBy }, { where: { id } });
+        await Task.update({ status, title, dueDate: DUE_DATE, projectId, userId, updatedAt, updatedBy }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

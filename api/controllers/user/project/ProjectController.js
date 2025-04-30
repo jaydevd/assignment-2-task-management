@@ -24,21 +24,21 @@ const ListProjects = async (req, res) => {
         let selectClause = `SELECT p.id, p.name`;
         const fromClause = `\n FROM projects p JOIN project_members pm ON p.id = pm.project_id`;
         const groupByClause = `\n GROUP BY p.id`
-        let whereClause = ` WHERE p.is_active = true AND pm.is_active = true AND pm.user_id = '${id}'`;
+        let whereClause = `\n WHERE p.is_active = true AND pm.is_active = true AND pm.user_id = '${id}'`;
         const paginationClause = `\n LIMIT ${limit} OFFSET ${offset} `;
 
-        if (name) whereClause = whereClause.concat(`\n WHERE p.name = '${name}'`);
+        if (name) whereClause = whereClause.concat(`\n AND p.name = '${name}'`);
 
         selectClause = selectClause
             .concat(fromClause)
-            .concat(groupByClause)
             .concat(whereClause)
+            .concat(groupByClause)
             .concat(paginationClause);
 
         selectClauseCount = selectClauseCount
             .concat(fromClause)
-            .concat(groupByClause)
-            .concat(whereClause);
+            .concat(whereClause)
+            .concat(groupByClause);
 
         const [projects, metadata] = await sequelize.query(selectClause);
         const [total] = await sequelize.query(selectClauseCount);

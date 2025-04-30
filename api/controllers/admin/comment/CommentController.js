@@ -20,20 +20,20 @@ const ListComments = async (req, res) => {
         const { taskId, comment, page, limit } = req.query;
         const offset = Number(page - 1) * limit;
 
-        const selectClauseCount = `SELECT COUNT(id)`;
-        const selectClause = `SELECT id, comment, user_id, task_id, is_active, is_deleted`;
+        let selectClauseCount = `SELECT COUNT(id)`;
+        let selectClause = `SELECT id, comment, user_id, task_id, is_active, is_deleted`;
         const fromClause = `\n FROM comments`;
-        const whereClause = `\n WHERE taskId = '${taskId}'`;
-        const paginationClause = ` LIMIT ${limit} OFFSET ${offset} `;
+        let whereClause = `\n WHERE task_id = '${taskId}'`;
+        const paginationClause = `\n LIMIT ${limit} OFFSET ${offset}`;
 
         if (comment) whereClause.concat(`\n AND comment = '${comment}'`);
 
-        selectClause
+        selectClause = selectClause
             .concat(fromClause)
             .concat(whereClause)
             .concat(paginationClause);
 
-        selectClauseCount
+        selectClauseCount = selectClauseCount
             .concat(fromClause)
             .concat(whereClause);
 

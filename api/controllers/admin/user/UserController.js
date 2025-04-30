@@ -12,6 +12,7 @@ const Validator = require("validatorjs");
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
+const { User } = require("../../../models");
 
 const ListUsers = async (req, res) => {
     try {
@@ -67,10 +68,10 @@ const UpdateUser = async (req, res) => {
         const validation = new Validator(validationObj, {
             id: VALIDATION_RULES.USER.ID,
             name: VALIDATION_RULES.USER.NAME,
-            position: VALIDATION_RULES.USER.POSITION,
-            address: VALIDATION_RULES.USER.ADDRESS,
-            gender: VALIDATION_RULES.USER.GENDER,
-            joinedAt: VALIDATION_RULES.USER.JOINED_AT
+            // position: VALIDATION_RULES.USER.POSITION,
+            // address: VALIDATION_RULES.USER.ADDRESS,
+            // gender: VALIDATION_RULES.USER.GENDER,
+            // joinedAt: VALIDATION_RULES.USER.JOINED_AT
         });
 
         const JOINED_AT = +Date.parse(joinedAt);
@@ -84,7 +85,8 @@ const UpdateUser = async (req, res) => {
             })
         }
 
-        await User.update({ name, phoneNumber, position, address, gender, joinedAt: JOINED_AT }, { where: { id } });
+        await User.update({ name }, { where: { id } });
+        // await User.update({ name, phoneNumber, position, address, gender, joinedAt: JOINED_AT }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

@@ -8,11 +8,11 @@ router.route('/list')
     .all(isAdmin)
     .get(ListUsers);
 
-router.route('/update-user')
+router.route('/update')
     .all(isAdmin)
     .post(UpdateUser);
 
-router.route('/delete-user')
+router.route('/delete')
     .all(isAdmin)
     .get(DeleteUser);
 

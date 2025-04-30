@@ -15,6 +15,14 @@ const Comment = sequelize.define("Comment", {
             model: 'users'
         }
     },
+    taskId: {
+        field: 'task_id',
+        type: DataTypes.STRING(60),
+        references: {
+            key: 'id',
+            model: 'tasks'
+        }
+    },
     comment: {
         type: DataTypes.STRING(200),
         allowNull: false
