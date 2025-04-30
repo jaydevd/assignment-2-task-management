@@ -59,7 +59,7 @@ const UpdateUser = async (req, res) => {
             joinedAt: VALIDATION_RULES.USER.JOINED_AT
         });
 
-        const joinedAtTP = +Date.parse(joinedAt);
+        joinedAt = +Date.parse(joinedAt);
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -70,28 +70,7 @@ const UpdateUser = async (req, res) => {
             })
         }
 
-        const query = `
-        UPDATE users
-        SET 
-        `;
-        const NAME = `name = '${name}'`;
-        const PHONE_NUMBER = `,phone_number = '${phoneNumber}'`;
-        const ADDRESS = `,address = '${address}'`;
-        const GENDER = `,gender = '${gender}'`;
-        const JOINED_AT = `,joined_at = '${joinedAtTP}'`;
-        const POSITION = `,POSITION = '${position}`;
-        const WHERE = ` WHERE id = '${id}'`;
-
-        if (name) query += NAME;
-        if (phoneNumber) query += PHONE_NUMBER;
-        if (address) query += ADDRESS;
-        if (gender) query += GENDER;
-        if (joinedAt) query += JOINED_AT;
-        if (position) query += POSITION;
-
-        query += WHERE;
-
-        await sequelize.query(query);
+        await User.update({ name, phoneNumber, position, address, gender, joinedAt }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -133,17 +112,7 @@ const DeleteUser = async (req, res) => {
 
         const updatedAt = Math.floor(Date.now() / 1000);
 
-        const query = `
-        UPDATE users
-        SET
-        updated_at = '${updatedAt}',
-        updated_by = '${updatedBy}',
-        is_active = false,
-        is_deleted = true
-        WHERE id = '${id}'
-        `;
-
-        await sequelize.query(query);
+        await User.update({ isActive: false, isDeleted: true, updatedAt, updatedBy }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

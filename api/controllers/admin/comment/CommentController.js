@@ -23,7 +23,8 @@ const ListComments = async (req, res) => {
         const SELECT_COUNT = `SELECT COUNT(id) FROM comments`;
         const query = `
         SELECT id, comment, user_id, task_id FROM comments
-        WHERE taskId = '${taskId}'
+        WHERE taskId = '${taskId}' AND
+        is_active = true
         `;
         const WHERE = ` AND comment = '%${comment}%'`;
         const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
@@ -78,7 +79,7 @@ const AddComment = async (req, res) => {
 
         const createdAt = Math.floor(Date.now() / 1000);
 
-        const [result, metadata] = Comment.create({ id, taskId, comment, userId, createdAt, createdBy, isActive: true, isDeleted: false });
+        await Comment.create({ id, taskId, comment, userId, createdAt, createdBy, isActive: true, isDeleted: false });
 
         if (!result) {
             return res.status(400).json({

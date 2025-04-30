@@ -15,6 +15,7 @@ const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_CODES, FORGOT_PASSWORD_URL } = require('../../../config/constants');
 const { VALIDATION_RULES } = require('../../../config/validations');
 const { sequelize } = require('../../../config/database');
+const { User } = require('../../../models');
 
 const SignUp = async (req, res) => {
 
@@ -44,16 +45,23 @@ const SignUp = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const id = uuidv4();
         const createdAt = Math.floor(Date.now() / 1000);
-        const date = Math.floor(+Date.parse(joinedAt) / 1000);
+        joinedAt = Math.floor(+Date.parse(joinedAt) / 1000);
 
-        const query = `
-        INSERT INTO users
-            (id, name, email, phone_number, address, position, password, gender, joined_at, created_at, created_by, is_active, is_deleted)
-        VALUES
-            ('${id}','${name}', '${email}', '${phoneNumber}', '${address}', '${position}', '${hashedPassword}', '${gender}', '${date}', '${createdAt}', '${id}', true, false)
-        `;
-
-        await sequelize.query(query);
+        await User.create({
+            id,
+            name,
+            email,
+            phoneNumber,
+            address,
+            position,
+            password: hashedPassword,
+            gender,
+            joinedAt,
+            createdAt,
+            createdBy,
+            isActive: true,
+            isDeleted: false
+        });
 
         const token = jwt.sign({ id }, process.env.SECRET_KEY, { expiresIn: '1h' });
 
@@ -97,22 +105,15 @@ const LogIn = async (req, res) => {
             })
         }
 
-        const query = `
-        SELECT u.id, u.email, u.password, u.token FROM users u
-        WHERE u.is_active = true AND u.email = '${email}';
-        `;
-        const [response, metadata] = await sequelize.query(query);
-
-        if (response == {}) {
+        const user = await User.findOne({ id, name, email, password, position, password, token, gender, joinedAt }, { where: { isActive: true } });
+        if (!user) {
             return res.status(400).json({
                 status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
                 message: "User Not Found",
                 data: "",
                 error: ""
             });
-        }
-
-        const user = response[0];
+        } s
 
         const isMatch = await bcrypt.compare(password, user.password);
 
@@ -126,7 +127,7 @@ const LogIn = async (req, res) => {
         }
 
         const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY, { expiresIn: '1h' });
-        client.set("user", user.id);
+        client.set(`user:${id}`, user);
 
         await sequelize.query(`UPDATE users SET token = '${token}' WHERE id = '${user.id}'`);
 
@@ -154,10 +155,9 @@ const LogOut = async (req, res) => {
         const updatedBy = user.id;
         const updatedAt = Math.floor(Date.now() / 1000);
 
-        const query = `UPDATE users SET token = NULL, updated_by = '${updatedBy}', updated_at = '${updatedAt}' WHERE id = '${id}'`;
-        await sequelize.query(query);
+        await User.update({ token: null, updatedBy, updatedAt }, { where: { id } });
 
-        client.del("user");
+        client.del(`user:${id}`, user);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -182,11 +182,23 @@ const ForgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
-        const token = jwt.sign({ email }, { expiresIn: '1hr' });
+        const validationObj = { email };
+        const validation = new Validator(validationObj, {
+            email: VALIDATION_RULES.USER.EMAIL
+        })
 
-        const query = `
-        UPDATE users SET token = '${token}' WHERE email = '${email}';
-        `;
+        if (validation.fails()) {
+            return res.status(400).json({
+                status: HTTP_STATUS_CODES.CLIENT_ERROR.BAD_REQUEST,
+                message: 'validation failed',
+                data: '',
+                error: VALIDATION_RULES.errors.all()
+            })
+        }
+
+        const token = jwt.sign({ email }, { expiresIn: '1h' });
+
+        await User.update({ token }, { where: { email } });
 
         await sequelize.query(query);
         const URL = FORGOT_PASSWORD_URL.USER + `/:${token}`;
@@ -224,6 +236,7 @@ const ResetPassword = async (req, res) => {
         `;
 
         await sequelize.query(query);
+        await User.update({ password: hashedPassword }, { where: { token } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

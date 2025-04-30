@@ -93,11 +93,7 @@ const UpdateTask = async (req, res) => {
 
         const validationObj = req.body;
         const validation = new Validator(validationObj, {
-            title: VALIDATION_RULES.TASK.TITLE,
             status: VALIDATION_RULES.TASK.STATUS,
-            userId: VALIDATION_RULES.TASK.USER_ID,
-            projectId: VALIDATION_RULES.TASK.PROJECT_ID,
-            dueDate: VALIDATION_RULES.TASK.DUE_DATE
         });
 
         if (validation.fails()) {
@@ -109,13 +105,9 @@ const UpdateTask = async (req, res) => {
             })
         }
 
-        const query = `
-        UPDATE tasks
-        SET status = '${status}', title = '${title}', updated_at = '${Math.floor(Date.now() / 1000)}', updated_by = '${updatedBy}'
-        WHERE id = '${id}';
-        `;
+        const updatedAt = Math.floor(Date.now() / 1000);
 
-        await sequelize.query(query);
+        await Task.update({ status, updatedAt, updatedBy: id }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

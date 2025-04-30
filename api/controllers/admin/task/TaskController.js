@@ -13,6 +13,7 @@ const Validator = require("validatorjs");
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
+const { Task } = require('../../../models');
 
 const ListTasks = async (req, res) => {
     try {
@@ -40,7 +41,7 @@ const ListTasks = async (req, res) => {
 
         const date = Math.floor(Date.now() / 1000);
 
-        const query = `
+        const SELECT = `
         SELECT t.id, t.title, t.status, t.user_id, t.due_date, t.created_at, u.name as user, p.name as project
         FROM tasks t
         JOIN users u
@@ -53,13 +54,15 @@ const ListTasks = async (req, res) => {
         t.project_id = '${projectId}' AND
         t.due_date >= '${date}'
         `;
+        // const FROM = `FROM tasks t`;
+
+        const query = SELECT;
 
         const TITLE = ` AND t.title ILIKE '%${title}%'`;
         const STATUS = ` AND t.status = '${status}'`;
         const LIMIT = ` LIMIT ${limit} OFFSET ${skip}`;
 
         if (title) query += TITLE;
-        if (dueDate) query += DUE_DATE;
         if (status) query += STATUS;
 
         query += LIMIT;
@@ -112,14 +115,7 @@ const AssignTask = async (req, res) => {
         const id = uuidv4();
         const createdAt = Math.floor(Date.now() / 1000);
 
-        const query = `
-        INSERT INTO tasks
-            (id, title, due_date, status, user_id, project_id, created_at, created_by, is_active, is_deleted)
-        VALUES
-            ('${id}', '${title}', '${dueDate}', '${status}', '${userId}', '${projectId}', '${createdAt}', '${createdBy}', true, false);
-        `;
-
-        await sequelize.query(query);
+        await Task.create({ id, title, dueDate, status, userId, projectId, createdAt, createdBy, isActive: true, isDeleted: false });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -143,12 +139,19 @@ const AssignTask = async (req, res) => {
 const UpdateTask = async (req, res) => {
     try {
 
-        const { id, status, title, dueDate } = req.body;
+        const { id, status, title, dueDate, projectId, userId } = req.body;
         const admin = req.admin;
         const updatedBy = admin.id;
 
         const validationObj = req.body;
-        const validation = new Validator(validationObj, VALIDATION_RULES.TASK);
+        const validation = new Validator(validationObj, {
+            id: VALIDATION_RULES.TASK.ID,
+            title: VALIDATION_RULES.TASK.TITLE,
+            dueDate: VALIDATION_RULES.TASK.DUE_DATE,
+            projectId: VALIDATION_RULES.TASK.PROJECT_ID,
+            userId: VALIDATION_RULES.TASK.USER_ID,
+            status: VALIDATION_RULES.TASK.STATUS
+        });
 
         if (validation.fails()) {
             return res.status(400).json({
@@ -159,13 +162,9 @@ const UpdateTask = async (req, res) => {
             })
         }
 
-        const query = `
-        UPDATE tasks
-        SET status = '${status}', title = '${title}', due_date = '${dueDate}, updated_at = '${Math.floor(Date.now() / 1000)}', updated_by = '${updatedBy}'
-        WHERE id = '${id}';
-        `;
+        const updatedAt = Math.floor(Date.now() / 1000);
 
-        await sequelize.query(query);
+        await Task.update({ status, title, dueDate, projectId, userId, updatedAt, updatedBy }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -193,14 +192,7 @@ const DeleteTask = async (req, res) => {
         const updatedBy = admin.id;
         const updatedAt = Math.floor(Date.now() / 1000)
 
-        const query = `
-        UPDATE tasks
-        const updatedAt = Math.floor(Date.now() / 1000)
-        SET is_active = false, is_deleted = true, updated_at = '${updatedAt}', updated_by = '${updatedBy}'
-        WHERE id = '${id}';
-        `;
-
-        await sequelize.query(query);
+        await Task.update({ isActive: false, isDeleted: true, updatedAt, updatedBy }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

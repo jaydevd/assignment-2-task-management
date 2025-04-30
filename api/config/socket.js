@@ -23,7 +23,6 @@ module.exports = async (io) => {
             // Cleanup on disconnect
             socket.on(SOCKET_EVENTS.DISCONNECT, () => {
                 Disconnect(socket, users);
-                console.log('User disconnected:', socket.id);
             });
         });
     } catch (error) {

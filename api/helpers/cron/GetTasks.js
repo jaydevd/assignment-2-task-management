@@ -1,6 +1,6 @@
 const { sequelize } = require("../../config/database");
 
-module.exports.GetTasks = async () => {
+module.exports.getTasks = async () => {
     try {
         const date = Math.floor(Date.now() / 1000);
         const query = `

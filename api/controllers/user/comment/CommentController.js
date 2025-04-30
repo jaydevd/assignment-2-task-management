@@ -74,14 +74,8 @@ const AddComment = async (req, res) => {
 
         const createdAt = Math.floor(Date.now() / 1000);
 
-        const query = `
-        INSERT INTO comments
-            (id, task_id, comment, user_id, created_at, created_by, is_active, is_deleted)
-        VALUES
-            ('${id}', '${taskId}', '${comment}', '${userId}', '${createdAt}', '${createdBy}', true, false)
-        `;
+        await Comment.create({ id, taskId, comment, userId, createdAt, createdBy, isActive: true, isDeleted: false });
 
-        await sequelize.query(query);
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -120,17 +114,7 @@ const DeleteComment = async (req, res) => {
             })
         }
 
-        const query = `
-        UPDATE comments
-        SET
-        updated_at = '${updatedAt}',
-        updated_by = '${updatedBy}',
-        is_active = false,
-        is_deleted = true
-        WHERE id = '${id}'
-        `;
-
-        await sequelize.query(query);
+        await Comment.update({ updatedAt, updatedBy, isActive: false, isDeleted: true }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

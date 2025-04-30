@@ -13,7 +13,7 @@ const Validator = require("validatorjs");
 const { HTTP_STATUS_CODES } = require('../../../config/constants');
 const { sequelize } = require('../../../config/database');
 const { VALIDATION_RULES } = require('../../../config/validations');
-const { Project } = require('../../../models');
+const { Project, ProjectMember } = require('../../../models');
 
 const ListProjects = async (req, res) => {
     try {
@@ -59,6 +59,7 @@ const ListMembers = async (req, res) => {
         JOIN users u
         ON pm.user_id = u.id
         WHERE pm.project_id = '${projectId}'
+        AND pm.is_active = true
         `;
 
         const WHERE = ` AND u.name ILIKE '${search}' OR u.email ILIKE '${search}'`;
@@ -112,15 +113,6 @@ const CreateProject = async (req, res) => {
 
         await Project.create({ id, name, createdBy: adminID, createdAt, isActive: true, isDeleted: false });
 
-        const query = `
-        INSERT INTO projects
-            (id, name, created_by, created_at, is_active, is_deleted)
-        VALUES
-            ('${id}', '${name}', '${adminID}', '${createdAt}', true, false)
-        ;`;
-
-        await sequelize.query(query);
-
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'project saved',
@@ -164,14 +156,7 @@ const AddMember = async (req, res) => {
         const adminId = admin.id;
         const createdAt = Math.floor(Date.now() / 1000);
 
-        const query = `
-        INSERT INTO project_members
-            (id, user_id, project_id, role, created_by, created_at, is_active, is_deleted)
-        VALUES
-            ('${id}', '${userId}', '${projectId}', '${role}', '${adminId}', '${createdAt}', true, false)
-        ;`;
-
-        await sequelize.query(query);
+        await ProjectMember.create({ id, userId, projectId, role, createdBy: adminId, createdAt, isActive: true, isDeleted: false });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -213,17 +198,7 @@ const DeleteMember = async (req, res) => {
 
         const updatedAt = Math.floor(Date.now() / 1000);
 
-        const query = `
-        UPDATE project_members
-        SET
-        updated_at = '${updatedAt}',
-        updated_by = '${updatedBy}',
-        is_active = false,
-        is_deleted = true
-        WHERE id = '${id}'
-        `;
-
-        await sequelize.query(query);
+        await ProjectMember.update({ isActive: false, isDeleted: true, updatedAt, updatedBy }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -266,16 +241,7 @@ const UpdateProject = async (req, res) => {
 
         const updatedAt = Math.floor(Date.now() / 1000);
 
-        const query = `
-        UPDATE projects
-        SET
-        name = '${name}',
-        updated_at = '${updatedAt}',
-        updated_by = '${updatedBy}'
-        WHERE id = '${id}'
-        `;
-
-        await sequelize.query(query);
+        await Project.update({ name, updatedAt, updatedBy }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
@@ -317,17 +283,7 @@ const DeleteProject = async (req, res) => {
 
         const updatedAt = Math.floor(Date.now() / 1000);
 
-        const query = `
-        UPDATE projects
-        SET
-        updated_at = '${updatedAt}',
-        updated_by = '${updatedBy}',
-        is_active = false,
-        is_deleted = true
-        WHERE id = '${id}'
-        `;
-
-        await sequelize.query(query);
+        await Project.update({ isActive: false, isDeleted: true, updatedAt, updatedBy }, { where: { id } });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

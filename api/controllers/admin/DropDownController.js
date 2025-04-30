@@ -9,13 +9,11 @@
  */
 
 const { HTTP_STATUS_CODES } = require('../../config/constants');
-const { sequelize } = require('./../../config/database');
+const { User } = require('../../models');
 
 const GetUsers = async (req, res) => {
     try {
-
-        const query = `SELECT id, name FROM users;`;
-        const [users, metadata] = await sequelize.query(query);
+        const users = await User.findAll({ attributes: ['id', 'name'] });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,

@@ -9,11 +9,6 @@ const STATUS = {
     POSTPONED: 'postponed'
 }
 
-const ADMIN = {
-    NAME: "Admin",
-    EMAIL: "admin2025@gmail.com"
-}
-
 const USER_POSITIONS = {
     TEAM_LEAD: "team-lead",
     JR_SDE: "jr-sde",
