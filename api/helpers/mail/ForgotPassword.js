@@ -1,10 +1,10 @@
 const { transporter } = require("../../config/transporter");
 
-const SendPasswordResetMail = (URL, email) => {
-
+const SendPasswordResetMail = async (URL, email) => {
+    console.log("inside the function to send password reset mail");
     try {
         const mailOptions = {
-            from: `${process.env.SMTP_USER} ${process.env.SMTP_PASSWORD}`,
+            from: `jaydevdwd@gmail.com`,
             to: email,
             subject: 'Password Reset',
             text: `Click the following link to reset your password: ${URL}`,

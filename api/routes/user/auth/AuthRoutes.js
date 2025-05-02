@@ -18,6 +18,6 @@ router.route('/forgot-password')
     .post(ForgotPassword);
 
 router.route('/reset-password/:token')
-    .post(ResetPassword);
+    .get(ResetPassword);
 
 module.exports = { AuthRoutes: router };

@@ -2,7 +2,7 @@ const { SOCKET_EVENTS } = require("../../config/constants");
 const { SendNotification } = require("../firebase/SendNotification");
 const { SaveTask } = require("./SaveTask");
 
-module.exports.TaskUpdate = (socket, users, to, updateTask, fcmToken) => {
+module.exports.TaskUpdate = async (socket, users, to, updateTask, fcmToken) => {
     const targetSocketId = users.get(to);
 
     SaveTask(updateTask);

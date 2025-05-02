@@ -66,17 +66,16 @@ const LogIn = async (req, res) => {
 
         client.set(`admin:${admin.id}`, JSON.stringify(admin));
 
-        const data = {
+        const adminDetails = {
             id: admin.id,
             name: admin.name,
-            email: admin.email,
-            token
-        }
+            email: admin.email
+        };
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: data,
+            data: { adminDetails, token },
             error: ''
         });
 

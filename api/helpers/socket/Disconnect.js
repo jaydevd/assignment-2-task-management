@@ -1,4 +1,4 @@
-module.exports.Disconnect = (socket, users) => {
+module.exports.Disconnect = async (socket, users) => {
     for (const [userId, socketId] of users.entries()) {
         if (socketId === socket.id) {
             users.delete(userId);

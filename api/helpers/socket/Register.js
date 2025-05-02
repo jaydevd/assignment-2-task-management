@@ -1,4 +1,4 @@
-module.exports.Register = (socket, users, userId) => {
+module.exports.Register = async (socket, users, userId) => {
 
     users.set(userId, socket.id);
     console.log(users);

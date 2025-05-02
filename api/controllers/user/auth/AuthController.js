@@ -47,7 +47,6 @@ const SignUp = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const id = uuidv4();
         const createdAt = Math.floor(Date.now() / 1000);
-        const JOINED_AT = Math.floor(+Date.parse(joinedAt) / 1000);
 
         await User.create({
             id,
@@ -58,9 +57,9 @@ const SignUp = async (req, res) => {
             position,
             password: hashedPassword,
             gender,
-            joinedAt: JOINED_AT,
+            joinedAt,
             createdAt,
-            createdBy,
+            createdBy: id,
             isActive: true,
             isDeleted: false
         });
@@ -69,10 +68,14 @@ const SignUp = async (req, res) => {
 
         await User.update({ token }, { where: { id } });
 
+        const user = {
+            id, name, email, phoneNumber, gender, address, position, joinedAt
+        }
+
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: 'Sign up successful',
-            data: token,
+            data: { token, user },
             error: ''
         });
 

@@ -22,9 +22,8 @@ const ListProjects = async (req, res) => {
         const offset = Number(page - 1) * limit;
 
         let selectClauseCount = `SELECT COUNT(p.id)`;
-        let selectClause = `SELECT p.id, p.name, COUNT(pm.id) as total_members, p.is_active, p.is_deleted`;
-        const fromClause = `\n FROM projects p JOIN project_members pm ON p.id = pm.project_id`;
-        const groupByClause = `\n GROUP BY p.id, pm.id`
+        let selectClause = `SELECT p.id, p.name, p.is_active, p.is_deleted`;
+        const fromClause = `\n FROM projects p`;
         let whereClause = ``;
         const paginationClause = `\n LIMIT ${limit} OFFSET ${offset} `;
 
@@ -32,13 +31,11 @@ const ListProjects = async (req, res) => {
 
         selectClause = selectClause
             .concat(fromClause)
-            .concat(groupByClause)
             .concat(whereClause)
             .concat(paginationClause);
 
         selectClauseCount = selectClauseCount
             .concat(fromClause)
-            .concat(groupByClause)
             .concat(whereClause);
 
         const [projects, metadata] = await sequelize.query(selectClause);
@@ -47,7 +44,7 @@ const ListProjects = async (req, res) => {
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: { projects, total },
+            data: { projects: projects, count: total[0].count },
             error: ''
         });
 
@@ -68,7 +65,7 @@ const ListMembers = async (req, res) => {
         const offset = Number(page - 1) * limit;
 
         let selectClauseCount = `SELECT COUNT(p.id)`;
-        let selectClause = `SELECT p.id, u.name, p.role, u.email`;
+        let selectClause = `SELECT p.id, u.name, p.role, u.email, p.user_id`;
         const fromClause = `\n FROM project_members p JOIN users u ON p.user_id = u.id`;
         let whereClause = `\n WHERE project_id = '${projectId}'`;
         const paginationClause = `\n LIMIT ${limit} OFFSET ${offset} `;
@@ -86,11 +83,12 @@ const ListMembers = async (req, res) => {
 
         const [members, metadata] = await sequelize.query(selectClause);
         const [total] = await sequelize.query(selectClauseCount);
+        const count = total[0].count;
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: { members, total },
+            data: { members, count },
             error: ''
         });
 

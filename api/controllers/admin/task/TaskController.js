@@ -17,20 +17,18 @@ const { Task } = require('../../../models');
 
 const ListTasks = async (req, res) => {
     try {
-
-        const { title, page, status, userId, limit, dueDate } = req.query;
+        const { title, page, status, userId, limit, dueDate, projectId } = req.query;
 
         const date = Math.floor(+Date.parse(dueDate) / 1000);
 
         let selectClauseCount = `SELECT count(id)`;
         let selectClause = `SELECT t.id, t.title, t.status, t.due_date, t.is_active`;
         const fromClause = `\n FROM tasks t`;
-        let whereClause = ``;
+        let whereClause = `\n WHERE t.user_id = '${userId}' AND t.project_id = '${projectId}'`;
 
         if (title) whereClause = whereClause.concat(`\n AND t.title ILIKE '%${title}%'`);
         if (status) whereClause = whereClause.concat(`\n AND t.status = '${status}'`);
         if (dueDate) whereClause = whereClause.concat(`\n AND t.due_date = '${date}'`);
-        if (userId) whereClause = whereClause.concat(`\n AND t.user_id = '${userId}'`);
 
         const offset = Number(page - 1) * limit;
 
@@ -47,11 +45,11 @@ const ListTasks = async (req, res) => {
 
         const [tasks] = await sequelize.query(selectClause);
         const [total] = await sequelize.query(selectClauseCount);
-
+        const count = total[0].count;
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
             message: '',
-            data: { tasks, total },
+            data: { tasks, count },
             error: ''
         })
 
@@ -72,6 +70,7 @@ const AssignTask = async (req, res) => {
         const createdBy = admin.id;
 
         const { userId, title, dueDate, status, projectId } = req.body;
+        console.log(req.body);
 
         const validationObj = req.body;
         const validation = new Validator(validationObj, {
@@ -93,9 +92,8 @@ const AssignTask = async (req, res) => {
 
         const id = uuidv4();
         const createdAt = Math.floor(Date.now() / 1000);
-        const date = Math.floor(+Date.parse(dueDate) / 1000);
 
-        await Task.create({ id, title, dueDate: date, status, userId, projectId, createdAt, createdBy, isActive: true, isDeleted: false });
+        await Task.create({ id, title, dueDate, status, userId, projectId, createdAt, createdBy, isActive: true, isDeleted: false });
 
         return res.status(200).json({
             status: HTTP_STATUS_CODES.SUCCESS.OK,
